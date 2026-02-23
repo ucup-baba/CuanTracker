@@ -65,3 +65,57 @@ export const availableColors = [
     "bg-teal-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500",
     "bg-pink-500", "bg-rose-500", "bg-gray-500", "bg-slate-500",
 ];
+
+// Default expense categories for Asrama wallet
+export const defaultAsramaCategories = {
+    "Dapur & Makan": {
+        icon: "Utensils",
+        color: "bg-orange-400",
+        subCategories: ["Belanja Bahan", "Gas", "Air Galon"]
+    },
+    "Kebersihan": {
+        icon: "Scissors",
+        color: "bg-teal-400",
+        subCategories: ["Sabun & Pel", "Tisu", "Sampah"]
+    },
+    "Tagihan": {
+        icon: "Receipt",
+        color: "bg-red-400",
+        subCategories: ["Listrik", "Air", "WiFi"]
+    },
+    "Perawatan": {
+        icon: "Wrench",
+        color: "bg-blue-400",
+        subCategories: ["Perbaikan", "Cat", "Alat"]
+    },
+    "Lain-lain": {
+        icon: "Package",
+        color: "bg-gray-400",
+        subCategories: ["Keperluan Mendadak", "Lainnya"]
+    }
+};
+
+// Default income categories for Asrama wallet
+export const defaultAsramaIncomeCategories = {
+    "Iuran": {
+        icon: "Landmark",
+        color: "bg-green-400",
+        subCategories: ["Iuran Bulanan", "Iuran Khusus"]
+    },
+    "Dana Yayasan": {
+        icon: "Shield",
+        color: "bg-blue-400",
+        subCategories: ["Bantuan Operasional", "Dana Darurat"]
+    },
+    "Lain-lain Masuk": {
+        icon: "Wallet",
+        color: "bg-gray-400",
+        subCategories: ["Donasi", "Lainnya"]
+    }
+};
+
+// Wallet definitions
+export const WALLETS = {
+    pribadi: { id: "pribadi", label: "Pribadi", icon: "Wallet", color: "bg-yellow-400", emoji: "💰" },
+    asrama: { id: "asrama", label: "Asrama", icon: "Home", color: "bg-indigo-400", emoji: "🏠" }
+};
