@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fungsi untuk memvalidasi apakah user yang login punya email VIP
+    function isVIP() {
+      return request.auth != null && 
+             (request.auth.token.email == "ucupbaba0704@gmail.com" || 
+              request.auth.token.email == "superbq@bqmail.com");
+    }
+
+    // Mengamankan koleksi transaksi global
+    match /globalTransactions/{document=**} {
+      allow read, write: if isVIP();
+    }
+
+    // Mengamankan koleksi pengaturan kategori global
+    match /globalSettings/{document=**} {
+      allow read, write: if isVIP();
+    }
+  }
+}
