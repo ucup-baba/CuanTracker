@@ -136,7 +136,7 @@ const Settings = ({
                     <span className={`p-1 border-2 ${activeSettingsWallet === 'pribadi' ? 'border-black bg-white' : 'border-gray-300 bg-white'}`}>
                         <Icons.Wallet size={16} strokeWidth={3} />
                     </span>
-                    💰 Pribadi
+                    Pribadi
                 </button>
                 <button
                     onClick={() => handleSwitchWallet('asrama')}
@@ -145,7 +145,7 @@ const Settings = ({
                     <span className={`p-1 border-2 ${activeSettingsWallet === 'asrama' ? 'border-black bg-white text-black' : 'border-gray-300 bg-white'}`}>
                         <Icons.Home size={16} strokeWidth={3} />
                     </span>
-                    🏠 Asrama
+                    Asrama
                 </button>
             </div>
 
@@ -176,7 +176,7 @@ const Settings = ({
                 <div className={`lg:col-span-1 border-4 border-black p-4 ${activeSettingsWallet === 'asrama' ? 'bg-indigo-50' : activeTab === 'income' ? 'bg-green-50' : 'bg-yellow-50'}`}>
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-black uppercase tracking-widest bg-black text-white px-3 py-1 inline-block text-xs">
-                            {walletInfo.emoji} {walletInfo.label} — {activeTab === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                            {walletInfo.label} — {activeTab === 'income' ? 'Pemasukan' : 'Pengeluaran'}
                         </h3>
                         <button
                             onClick={() => setIsCreatingNew(!isCreatingNew)}
@@ -215,7 +215,7 @@ const Settings = ({
                     {isCreatingNew ? (
                         <div>
                             <h3 className={`font-black uppercase tracking-widest border-2 border-black text-black px-3 py-1 inline-block mb-6 ${activeSettingsWallet === 'asrama' ? 'bg-indigo-300' : activeTab === 'income' ? 'bg-green-300' : 'bg-blue-400'}`}>
-                                Bikin Kategori Baru — {walletInfo.emoji} {walletInfo.label}
+                                Bikin Kategori Baru — {walletInfo.label}
                             </h3>
                             <form onSubmit={handleCreateNewCategory} className="space-y-6">
                                 <div>
@@ -258,7 +258,7 @@ const Settings = ({
                                 <div>
                                     <h3 className="text-2xl font-black uppercase tracking-wide">{editingCategory}</h3>
                                     <span className={`text-xs font-bold uppercase px-2 py-0.5 border-2 border-black ${activeSettingsWallet === 'asrama' ? 'bg-indigo-200' : activeTab === 'income' ? 'bg-green-200' : 'bg-red-200'}`}>
-                                        {walletInfo.emoji} {walletInfo.label} — {activeTab === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                                        {walletInfo.label} — {activeTab === 'income' ? 'Pemasukan' : 'Pengeluaran'}
                                     </span>
                                 </div>
                             </div>

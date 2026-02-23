@@ -1,10 +1,10 @@
 import React from 'react';
-import { Trash2, TrendingUp, ArrowRightLeft } from 'lucide-react';
+import { Trash2, TrendingUp, ArrowRightLeft, Edit3 } from 'lucide-react';
 import { formatRupiah } from '../utils';
 import { CategoryIcon, getCategoryColor } from './CategoryIcon';
 import { WALLETS } from '../constants';
 
-const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWallet, activeWallet }) => {
+const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWallet, activeWallet, setEditingTransaction }) => {
     return (
         <div className="space-y-4">
             {transactions.length === 0 ? (
@@ -32,11 +32,11 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
                     let transferDirection = '';
                     if (isTransfer) {
                         if (activeWallet === 'all') {
-                            transferDirection = `${WALLETS[t.fromWallet]?.emoji || ''} → ${WALLETS[t.toWallet]?.emoji || ''}`;
+                            transferDirection = `${WALLETS[t.fromWallet]?.label || ''} → ${WALLETS[t.toWallet]?.label || ''}`;
                         } else if (t.fromWallet === activeWallet) {
-                            transferDirection = `→ ${WALLETS[t.toWallet]?.emoji || ''} ${WALLETS[t.toWallet]?.label || ''}`;
+                            transferDirection = `→ ${WALLETS[t.toWallet]?.label || ''}`;
                         } else {
-                            transferDirection = `← ${WALLETS[t.fromWallet]?.emoji || ''} ${WALLETS[t.fromWallet]?.label || ''}`;
+                            transferDirection = `← ${WALLETS[t.fromWallet]?.label || ''}`;
                         }
                     }
 
@@ -68,7 +68,7 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
                                         {/* Wallet Badge */}
                                         {activeWallet === 'all' && !isTransfer && (
                                             <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest px-2 py-1 border-2 border-black ${txWallet === 'asrama' ? 'bg-indigo-300 text-black' : 'bg-yellow-300 text-black'} hover:-translate-y-0.5 transition-transform`}>
-                                                {WALLETS[txWallet]?.emoji} {WALLETS[txWallet]?.label}
+                                                {WALLETS[txWallet]?.label}
                                             </span>
                                         )}
 
@@ -93,12 +93,23 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
 
                             <div className="flex items-center gap-4">
                                 <span className={`font-black text-xl md:text-3xl tracking-tighter whitespace-nowrap ${isTransfer ? 'text-purple-600'
-                                        : t.type === 'income' ? 'text-green-600' : 'text-red-600'
+                                    : t.type === 'income' ? 'text-green-600' : 'text-red-600'
                                     }`}>
                                     {isTransfer ? '' : t.type === 'income' ? '+' : '-'}{formatRupiah(t.amount)}
                                 </span>
                                 <button
-                                    onClick={() => deleteTransaction(t.id)}
+                                    onClick={() => setEditingTransaction(t)}
+                                    className="bg-yellow-400 text-black p-3 border-2 border-black hover:bg-yellow-500 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                                    title="Edit"
+                                >
+                                    <Edit3 size={20} />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Yakin mau hapus transaksi ini? 🗑️')) {
+                                            deleteTransaction(t.id);
+                                        }
+                                    }}
                                     className="bg-black text-white p-3 border-2 border-black hover:bg-red-500 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
                                     title="Hapus"
                                 >

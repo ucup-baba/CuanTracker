@@ -6,6 +6,7 @@ import TransactionForm from './components/TransactionForm';
 import TransactionList from './components/TransactionList';
 import Login from './components/Login';
 import Settings from './components/Settings';
+import CategorySummary from './components/CategorySummary';
 import {
     defaultCategories, defaultIncomeCategories,
     defaultAsramaCategories, defaultAsramaIncomeCategories,
@@ -19,6 +20,9 @@ export default function App() {
     const [currentView, setCurrentView] = useState('dashboard');
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [activeWallet, setActiveWallet] = useState('all'); // 'all' | 'pribadi' | 'asrama'
+    const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month'
+    const [activeSummary, setActiveSummary] = useState(null); // 'income' | 'expense' | null
+    const [editingTransaction, setEditingTransaction] = useState(null);
 
     // Kategori per wallet
     const [pribadiCategories, setPribadiCategories] = useState(defaultCategories);
@@ -85,6 +89,23 @@ export default function App() {
             });
         }
 
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            filtered = filtered.filter(t => {
+                const txDate = new Date(t.date);
+                if (dateFilter === 'today') {
+                    return txDate.toDateString() === now.toDateString();
+                } else if (dateFilter === 'week') {
+                    const diffTime = Math.abs(now - txDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays <= 7;
+                } else if (dateFilter === 'month') {
+                    return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                }
+                return true;
+            });
+        }
+
         let income = 0;
         let expense = 0;
 
@@ -110,7 +131,7 @@ export default function App() {
             totalIncome: income,
             totalExpense: expense
         };
-    }, [transactions, activeWallet]);
+    }, [transactions, activeWallet, dateFilter]);
 
     // Tambah transaksi baru
     const addTransaction = async (newTransaction) => {
@@ -119,6 +140,16 @@ export default function App() {
             await addDoc(collection(db, 'globalTransactions'), transactionData);
         } catch (error) {
             alert('Gagal menyimpan transaksi: ' + error.message);
+        }
+    };
+
+    // Update transaksi
+    const updateTransaction = async (id, updatedData) => {
+        try {
+            await updateDoc(doc(db, 'globalTransactions', id), updatedData);
+            setEditingTransaction(null);
+        } catch (error) {
+            alert('Gagal mengupdate transaksi: ' + error.message);
         }
     };
 
@@ -251,22 +282,51 @@ export default function App() {
                             totalIncome={totalIncome}
                             totalExpense={totalExpense}
                             activeWallet={activeWallet}
+                            onToggleSummary={(type) => setActiveSummary(prev => prev === type ? null : type)}
+                            activeSummary={activeSummary}
                         />
+
+                        {activeSummary && (
+                            <CategorySummary
+                                transactions={filteredTransactions}
+                                type={activeSummary}
+                                onClose={() => setActiveSummary(null)}
+                            />
+                        )}
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                             <section>
                                 <TransactionForm
                                     onAddTransaction={addTransaction}
+                                    onUpdateTransaction={updateTransaction}
                                     getCategoriesForWallet={getCategoriesForWallet}
                                     activeWallet={activeWallet}
+                                    editingTransaction={editingTransaction}
+                                    setEditingTransaction={setEditingTransaction}
                                 />
                             </section>
 
                             <section>
-                                <h2 className="text-4xl font-black uppercase tracking-tighter mb-8 bg-white inline-block px-6 py-2 border-4 border-black pop-shadow-sm rotate-[-2deg]">Daftar Dosa & Pahala</h2>
+                                <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-6 mt-2 xl:mt-0">
+                                    <h2 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter bg-white inline-block px-4 py-2 border-4 border-black pop-shadow-sm rotate-[-2deg]">Dosa & Pahala</h2>
+
+                                    {/* Filter Tanggal */}
+                                    <div className="flex flex-wrap gap-2 pb-2">
+                                        {['all', 'today', 'week', 'month'].map(f => (
+                                            <button
+                                                key={f}
+                                                onClick={() => setDateFilter(f)}
+                                                className={`px-3 py-2 border-2 border-black font-black uppercase tracking-widest text-[10px] md:text-xs whitespace-nowrap transition-transform ${dateFilter === f ? 'bg-black text-white pop-shadow-sm translate-x-1 z-10' : 'bg-white text-gray-500 hover:bg-gray-100 hover:-translate-y-1'}`}
+                                            >
+                                                {f === 'all' ? 'Semua Waktu' : f === 'today' ? 'Hari Ini' : f === 'week' ? 'Minggu Ini' : 'Bulan Ini'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <TransactionList
                                     transactions={filteredTransactions}
                                     deleteTransaction={deleteTransaction}
+                                    setEditingTransaction={setEditingTransaction}
                                     getCategoriesForWallet={getCategoriesForWallet}
                                     activeWallet={activeWallet}
                                 />

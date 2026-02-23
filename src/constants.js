@@ -116,6 +116,6 @@ export const defaultAsramaIncomeCategories = {
 
 // Wallet definitions
 export const WALLETS = {
-    pribadi: { id: "pribadi", label: "Pribadi", icon: "Wallet", color: "bg-yellow-400", emoji: "💰" },
-    asrama: { id: "asrama", label: "Asrama", icon: "Home", color: "bg-indigo-400", emoji: "🏠" }
+    pribadi: { id: "pribadi", label: "Pribadi", icon: "Wallet", color: "bg-yellow-400" },
+    asrama: { id: "asrama", label: "Asrama", icon: "Home", color: "bg-indigo-400" }
 };

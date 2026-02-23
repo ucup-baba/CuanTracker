@@ -3,9 +3,10 @@ import { CategoryIcon } from './CategoryIcon';
 import { WALLETS } from '../constants';
 import { Wallet, Home, ArrowRightLeft } from 'lucide-react';
 
-const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWallet }) => {
+const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction }) => {
     const [text, setText] = useState('');
-    const [amount, setAmount] = useState('');
+    const [amountDisplay, setAmountDisplay] = useState('');
+    const [amountRaw, setAmountRaw] = useState(0);
     const [type, setType] = useState('expense'); // 'expense' | 'income' | 'transfer'
     const [wallet, setWallet] = useState(activeWallet !== 'all' ? activeWallet : 'pribadi');
     const [category, setCategory] = useState('');
@@ -17,10 +18,28 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
 
     // Update wallet when activeWallet changes
     useEffect(() => {
-        if (activeWallet !== 'all') {
+        if (activeWallet !== 'all' && !editingTransaction) {
             setWallet(activeWallet);
         }
-    }, [activeWallet]);
+    }, [activeWallet, editingTransaction]);
+
+    // Update form state when editingTransaction changes
+    useEffect(() => {
+        if (editingTransaction) {
+            setText(editingTransaction.text);
+            setAmountRaw(editingTransaction.amount);
+            setAmountDisplay(editingTransaction.amount.toLocaleString('id-ID'));
+            setType(editingTransaction.type);
+            setCategory(editingTransaction.category || '');
+            setSubCategory(editingTransaction.subCategory || '');
+            if (editingTransaction.type === 'transfer') {
+                setFromWallet(editingTransaction.fromWallet || 'asrama');
+                setToWallet(editingTransaction.toWallet || 'pribadi');
+            } else {
+                setWallet(editingTransaction.wallet || 'pribadi');
+            }
+        }
+    }, [editingTransaction]);
 
     // Get active categories based on wallet + type
     const activeCategories = type !== 'transfer' ? getCategoriesForWallet(wallet, type) : {};
@@ -35,7 +54,7 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!amount || Number(amount) <= 0) {
+        if (!amountRaw || amountRaw <= 0) {
             alert('Masukkan nominal yang benar (lebih dari 0)!');
             return;
         }
@@ -46,18 +65,22 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                 alert('Dompet asal dan tujuan tidak boleh sama!');
                 return;
             }
-            onAddTransaction({
-                id: Math.floor(Math.random() * 100000000),
+            const txData = {
                 text: text || 'Transfer',
-                amount: Number(amount),
+                amount: amountRaw,
                 type: 'transfer',
                 fromWallet,
                 toWallet,
                 wallet: fromWallet,
                 category: null,
                 subCategory: null,
-                date: new Date().toISOString().split('T')[0]
-            });
+                date: editingTransaction ? editingTransaction.date : new Date().toISOString().split('T')[0]
+            };
+            if (editingTransaction) {
+                onUpdateTransaction(editingTransaction.id, txData);
+            } else {
+                onAddTransaction({ id: Math.floor(Math.random() * 100000000), ...txData });
+            }
         } else {
             if (!text) {
                 alert('Isi keterangan dulu Bos!');
@@ -67,23 +90,29 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                 alert('Pilih Kategori dan Sub-Kategori dulu Bos!');
                 return;
             }
-            onAddTransaction({
-                id: Math.floor(Math.random() * 100000000),
+            const txData = {
                 text,
-                amount: Number(amount),
+                amount: amountRaw,
                 type,
                 wallet,
                 category,
                 subCategory,
-                date: new Date().toISOString().split('T')[0]
-            });
+                date: editingTransaction ? editingTransaction.date : new Date().toISOString().split('T')[0]
+            };
+            if (editingTransaction) {
+                onUpdateTransaction(editingTransaction.id, txData);
+            } else {
+                onAddTransaction({ id: Math.floor(Math.random() * 100000000), ...txData });
+            }
         }
 
         // Reset form
         setText('');
-        setAmount('');
+        setAmountDisplay('');
+        setAmountRaw(0);
         setCategory('');
         setSubCategory('');
+        if (editingTransaction) setEditingTransaction(null);
     };
 
     const resetSelections = () => {
@@ -108,7 +137,7 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                             disabled={type === 'transfer'}
                         >
                             <span className="p-1 border-2 border-black bg-white"><Wallet size={16} strokeWidth={3} /></span>
-                            💰 Pribadi
+                            Pribadi
                         </button>
                         <button
                             type="button"
@@ -117,7 +146,7 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                             disabled={type === 'transfer'}
                         >
                             <span className="p-1 border-2 border-black bg-white text-black"><Home size={16} strokeWidth={3} /></span>
-                            🏠 Asrama
+                            Asrama
                         </button>
                     </div>
                 </div>
@@ -157,7 +186,7 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                                 onClick={() => { setFromWallet('asrama'); setToWallet('pribadi'); }}
                                 className={`flex-1 py-3 border-4 border-black font-black uppercase text-sm flex items-center justify-center gap-2 transition-all ${fromWallet === 'asrama' ? 'bg-indigo-400 text-white pop-shadow-sm' : 'bg-gray-100 text-gray-400'}`}
                             >
-                                🏠 Asrama
+                                Asrama
                             </button>
                             <ArrowRightLeft size={24} className="text-black flex-shrink-0" strokeWidth={3} />
                             <button
@@ -165,11 +194,11 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                                 onClick={() => { setFromWallet('pribadi'); setToWallet('asrama'); }}
                                 className={`flex-1 py-3 border-4 border-black font-black uppercase text-sm flex items-center justify-center gap-2 transition-all ${fromWallet === 'pribadi' ? 'bg-yellow-400 text-black pop-shadow-sm' : 'bg-gray-100 text-gray-400'}`}
                             >
-                                💰 Pribadi
+                                Pribadi
                             </button>
                         </div>
                         <p className="text-center font-bold uppercase text-xs text-purple-600">
-                            {WALLETS[fromWallet]?.emoji} {WALLETS[fromWallet]?.label} → {WALLETS[toWallet]?.emoji} {WALLETS[toWallet]?.label}
+                            {WALLETS[fromWallet]?.label} → {WALLETS[toWallet]?.label}
                         </p>
                     </div>
                 )}
@@ -241,10 +270,16 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                     <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-2xl">Rp</span>
                         <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            placeholder="50000"
+                            type="text"
+                            inputMode="numeric"
+                            value={amountDisplay}
+                            onChange={(e) => {
+                                const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                                const num = parseInt(raw, 10) || 0;
+                                setAmountRaw(num);
+                                setAmountDisplay(num > 0 ? num.toLocaleString('id-ID') : '');
+                            }}
+                            placeholder="50.000"
                             className="w-full bg-yellow-50 border-4 border-black p-4 pl-14 font-bold text-xl focus:outline-none focus:bg-yellow-100 pop-shadow-sm transition-colors"
                             required
                         />
@@ -255,12 +290,28 @@ const TransactionForm = ({ onAddTransaction, getCategoriesForWallet, activeWalle
                 <button
                     type="submit"
                     className={`w-full font-black uppercase tracking-widest text-2xl py-6 border-4 border-black transition-colors pop-shadow mt-4 ${type === 'transfer'
-                            ? 'bg-purple-500 text-white hover:bg-purple-400'
-                            : 'bg-black text-white hover:bg-yellow-400 hover:text-black'
+                        ? 'bg-purple-500 text-white hover:bg-purple-400'
+                        : 'bg-black text-white hover:bg-yellow-400 hover:text-black'
                         }`}
                 >
-                    {type === 'transfer' ? 'TRANSFER SEKARANG!' : 'CATAT SEKARANG!'}
+                    {editingTransaction ? 'SIMPAN PERUBAHAN!' : type === 'transfer' ? 'TRANSFER SEKARANG!' : 'CATAT SEKARANG!'}
                 </button>
+                {editingTransaction && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setEditingTransaction(null);
+                            setText('');
+                            setAmountDisplay('');
+                            setAmountRaw(0);
+                            setCategory('');
+                            setSubCategory('');
+                        }}
+                        className="w-full font-black uppercase tracking-widest text-xl py-4 border-4 border-black transition-colors mt-4 bg-white text-black hover:bg-gray-100"
+                    >
+                        BATAL EDIT
+                    </button>
+                )}
             </form>
         </div>
     );
