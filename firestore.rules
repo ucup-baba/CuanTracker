@@ -19,5 +19,10 @@ service cloud.firestore {
     match /globalSettings/{document=**} {
       allow read, write: if isVIP();
     }
+
+    // Mengamankan koleksi riwayat opname kas global
+    match /globalCashMatches/{document=**} {
+      allow read, write: if isVIP();
+    }
   }
 }

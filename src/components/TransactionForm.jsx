@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CategoryIcon } from './CategoryIcon';
 import { WALLETS } from '../constants';
 import { Wallet, Home, ArrowRightLeft } from 'lucide-react';
+import AlertModal from './AlertModal';
 
 const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction }) => {
     const [text, setText] = useState('');
@@ -11,6 +12,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
     const [wallet, setWallet] = useState(activeWallet !== 'all' ? activeWallet : 'pribadi');
     const [category, setCategory] = useState('');
     const [subCategory, setSubCategory] = useState('');
+    const [alertModal, setAlertModal] = useState({ isOpen: false, message: '' });
 
     // Transfer fields
     const [fromWallet, setFromWallet] = useState('asrama');
@@ -55,14 +57,14 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!amountRaw || amountRaw <= 0) {
-            alert('Masukkan nominal yang benar (lebih dari 0)!');
+            setAlertModal({ isOpen: true, message: 'Masukkan nominal yang benar (lebih dari 0)!' });
             return;
         }
 
         if (type === 'transfer') {
             if (!text) { setText('Transfer'); }
             if (fromWallet === toWallet) {
-                alert('Dompet asal dan tujuan tidak boleh sama!');
+                setAlertModal({ isOpen: true, message: 'Dompet asal dan tujuan tidak boleh sama!' });
                 return;
             }
             const txData = {
@@ -83,11 +85,11 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
             }
         } else {
             if (!text) {
-                alert('Isi keterangan dulu Bos!');
+                setAlertModal({ isOpen: true, message: 'Isi keterangan dulu Bos!' });
                 return;
             }
             if (!category || !subCategory) {
-                alert('Pilih Kategori dan Sub-Kategori dulu Bos!');
+                setAlertModal({ isOpen: true, message: 'Pilih Kategori dan Sub-Kategori dulu Bos!' });
                 return;
             }
             const txData = {
@@ -210,7 +212,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                             <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">
                                 Kategori {type === 'income' ? 'Pemasukan' : 'Utama'}
                             </label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                            <div className="flex overflow-x-auto gap-3 pb-4 snap-x">
                                 {Object.keys(activeCategories).map(cat => {
                                     const catData = activeCategories[cat];
                                     return (
@@ -218,11 +220,11 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                                             key={cat}
                                             type="button"
                                             onClick={() => setCategory(cat)}
-                                            className={`p-3 border-4 border-black flex flex-col items-center justify-center gap-2 transition-transform ${category === cat ? `${catData.color || 'bg-yellow-400'} text-black pop-shadow scale-105 z-10` : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:-translate-y-1'}`}
+                                            className={`min-w-[80px] md:min-w-[100px] shrink-0 snap-start p-2 md:p-3 border-4 border-black flex flex-col items-center justify-center gap-1 md:gap-2 transition-transform ${category === cat ? `${catData.color || 'bg-yellow-400'} text-black pop-shadow-sm scale-110 z-10` : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                                             title={cat}
                                         >
-                                            <CategoryIcon iconName={catData.icon} size={32} />
-                                            <span className="text-[10px] md:text-xs font-black uppercase text-center mt-1">{cat}</span>
+                                            <CategoryIcon iconName={catData.icon} size={24} />
+                                            <span className="text-[10px] leading-tight font-black uppercase text-center mt-1 break-words w-full">{cat}</span>
                                         </button>
                                     );
                                 })}
@@ -313,6 +315,12 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                     </button>
                 )}
             </form>
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                message={alertModal.message}
+                onClose={() => setAlertModal({ isOpen: false, message: '' })}
+            />
         </div>
     );
 };

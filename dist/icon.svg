@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Neo-brutalism yellow background -->
+  <rect width="512" height="512" fill="#facc15" />
+  
+  <g transform="translate(32, 240)">
+    <text font-family="'Arial Black', Impact, sans-serif" font-size="160" font-weight="900" fill="#24221a" textLength="448" lengthAdjust="spacingAndGlyphs">CUAN</text>
+  </g>
+  <g transform="translate(32, 400)">
+    <text font-family="'Arial Black', Impact, sans-serif" font-size="130" font-weight="900" fill="#24221a" textLength="448" lengthAdjust="spacingAndGlyphs">TRACKER.</text>
+  </g>
+</svg>

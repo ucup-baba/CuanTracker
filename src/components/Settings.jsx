@@ -1,20 +1,101 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import * as Icons from 'lucide-react';
 import { availableColors, WALLETS } from '../constants';
 import { CategoryIcon, getCategoryColor } from './CategoryIcon';
+import ConfirmModal from './ConfirmModal';
+import AlertModal from './AlertModal';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const COMMON_ICONS = [
-    "Coffee", "Car", "Receipt", "Gamepad2", "Package", "DollarSign", "ShoppingBag",
-    "Monitor", "Utensils", "Bus", "Train", "Plane", "Home", "Wifi", "Smartphone",
-    "Briefcase", "Heart", "Activity", "Book", "Music", "Video", "Camera", "Gift",
-    "Zap", "Shield", "Wrench", "Trophy", "Star", "HeartPulse", "Scissors",
-    "TrendingUp", "Wallet", "PiggyBank", "Landmark", "BadgeDollarSign"
+    // Finance / Money
+    "DollarSign", "Wallet", "PiggyBank", "Landmark", "BadgeDollarSign", "Coins", "Banknote", "CreditCard", "Receipt", "TrendingUp", "TrendingDown",
+    // Food & Drink
+    "Coffee", "Utensils", "UtensilsCrossed", "Pizza", "Wine", "CupSoda", "Croissant",
+    // Transport & Vehicles
+    "Car", "Bus", "Train", "Plane", "Ship", "Bike", "Fuel", "MapPin", "Navigation",
+    // Shopping & Retail
+    "ShoppingBag", "ShoppingCart", "Store", "Tag", "Package", "Gift", "Shirt",
+    // Home & Living
+    "Home", "Building", "Bed", "Sofa", "Lightbulb", "Flashlight", "Flame", "Droplets",
+    // Tech & Media
+    "Monitor", "Smartphone", "Laptop", "Wifi", "Tv", "Headphones", "Music", "Video", "Camera", "Mic", "Gamepad2",
+    // Health & Wellness
+    "Heart", "Activity", "HeartPulse", "Stethoscope", "Pill", "Dumbbell", "Smile",
+    // Work & Education
+    "GraduationCap", "School", "Library", "Backpack", "Book", "BookOpen", "Pencil", "Ruler", "Calculator", "Briefcase", "PenTool", "Scissors", "Wrench", "Hammer",
+    // Miscellaneous
+    "Star", "Zap", "Shield", "Trophy", "Award", "Ticket", "Umbrella", "SmilePlus"
 ];
+
+// Sortable Category Item Component
+const SortableCategoryItem = ({ id, cat, categoryData, isEditing, onEdit, onDelete }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={`flex justify-between items-center p-3 border-4 border-black transition-colors ${isDragging ? 'opacity-50 border-dashed bg-gray-100 scale-105' : ''} ${isEditing ? 'bg-black text-white translate-x-1' : 'bg-white hover:bg-gray-100'}`}
+            onClick={() => onEdit(cat)}
+        >
+            <div className="flex items-center gap-3">
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-black p-1 -ml-2 rounded-md z-20 touch-none"
+                    onClick={(e) => e.stopPropagation()} // Prevent clicking grip from triggering edit
+                >
+                    <Icons.GripVertical size={20} />
+                </div>
+                <div className={`p-1 border-2 ${isEditing ? 'border-white bg-white text-black' : 'border-black ' + getCategoryColor(categoryData.color)}`}>
+                    <CategoryIcon iconName={categoryData.icon} size={20} />
+                </div>
+                <span className="font-bold uppercase text-sm truncate max-w-[120px]">{cat}</span>
+            </div>
+            <button
+                onClick={(e) => { e.stopPropagation(); onDelete(cat); }}
+                className={`p-1 hover:bg-red-500 hover:text-white transition-colors ${isEditing ? 'text-gray-300' : 'text-gray-400'}`}
+                title="Hapus Kategori"
+            >
+                <Icons.Trash2 size={16} />
+            </button>
+        </div>
+    );
+};
 
 const Settings = ({
     pribadiCategories, pribadiIncomeCategories,
     asramaCategories, asramaIncomeCategories,
-    onSaveCategories, onBack
+    onSaveCategories, onBack, setDirty
 }) => {
     const [activeSettingsWallet, setActiveSettingsWallet] = useState('pribadi');
     const [activeTab, setActiveTab] = useState('expense');
@@ -22,9 +103,9 @@ const Settings = ({
     // Get the right categories for current wallet+tab
     const getCats = () => {
         if (activeSettingsWallet === 'pribadi') {
-            return activeTab === 'expense' ? pribadiCategories : pribadiIncomeCategories;
+            return activeTab === 'expense' ? JSON.parse(JSON.stringify(pribadiCategories)) : JSON.parse(JSON.stringify(pribadiIncomeCategories));
         }
-        return activeTab === 'expense' ? asramaCategories : asramaIncomeCategories;
+        return activeTab === 'expense' ? JSON.parse(JSON.stringify(asramaCategories)) : JSON.parse(JSON.stringify(asramaIncomeCategories));
     };
 
     const [localCategories, setLocalCategories] = useState(getCats());
@@ -34,6 +115,42 @@ const Settings = ({
     const [newCatName, setNewCatName] = useState("");
     const [newCatIcon, setNewCatIcon] = useState("DollarSign");
     const [newCatColor, setNewCatColor] = useState("bg-black");
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, catName: null });
+    const [alertModal, setAlertModal] = useState({ isOpen: false, message: '' });
+    const [switchTarget, setSwitchTarget] = useState(null);
+
+    // Setup DnD Sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5, // 5px movement required before drag starts
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const isDirty = useMemo(() => {
+        const originalCats = activeSettingsWallet === 'pribadi'
+            ? (activeTab === 'expense' ? pribadiCategories : pribadiIncomeCategories)
+            : (activeTab === 'expense' ? asramaCategories : asramaIncomeCategories);
+        return JSON.stringify(localCategories) !== JSON.stringify(originalCats);
+    }, [localCategories, activeSettingsWallet, activeTab, pribadiCategories, pribadiIncomeCategories, asramaCategories, asramaIncomeCategories]);
+
+    useEffect(() => {
+        if (setDirty) setDirty(isDirty);
+
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = ''; // Standard way to show prompt
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty, setDirty]);
 
     const refreshLocal = (walletId, tabType) => {
         let cats;
@@ -42,20 +159,39 @@ const Settings = ({
         } else {
             cats = tabType === 'expense' ? asramaCategories : asramaIncomeCategories;
         }
-        setLocalCategories({ ...cats });
+        setLocalCategories(JSON.parse(JSON.stringify(cats)));
         setEditingCategory(null);
         setIsCreatingNew(false);
         setNewSubCategoryName("");
     };
 
+    const executeSwitch = (type, value) => {
+        if (type === 'wallet') {
+            setActiveSettingsWallet(value);
+            refreshLocal(value, activeTab);
+        } else {
+            setActiveTab(value);
+            refreshLocal(activeSettingsWallet, value);
+        }
+        setSwitchTarget(null);
+    };
+
     const handleSwitchWallet = (w) => {
-        setActiveSettingsWallet(w);
-        refreshLocal(w, activeTab);
+        if (w === activeSettingsWallet) return;
+        if (isDirty) {
+            setSwitchTarget({ type: 'wallet', value: w });
+        } else {
+            executeSwitch('wallet', w);
+        }
     };
 
     const handleSwitchTab = (t) => {
-        setActiveTab(t);
-        refreshLocal(activeSettingsWallet, t);
+        if (t === activeTab) return;
+        if (isDirty) {
+            setSwitchTarget({ type: 'tab', value: t });
+        } else {
+            executeSwitch('tab', t);
+        }
     };
 
     const handleSave = () => {
@@ -63,12 +199,16 @@ const Settings = ({
     };
 
     const handleDeleteCategory = (catName) => {
-        if (window.confirm(`Yakin mau hapus kategori "${catName}" beserta isinya?`)) {
-            const updated = { ...localCategories };
-            delete updated[catName];
-            setLocalCategories(updated);
-            if (editingCategory === catName) setEditingCategory(null);
-        }
+        setConfirmModal({ isOpen: true, catName });
+    };
+
+    const confirmDeleteCategory = () => {
+        const catName = confirmModal.catName;
+        const updated = { ...localCategories };
+        delete updated[catName];
+        setLocalCategories(updated);
+        if (editingCategory === catName) setEditingCategory(null);
+        setConfirmModal({ isOpen: false, catName: null });
     };
 
     const handleAddSubCategory = (e) => {
@@ -99,7 +239,7 @@ const Settings = ({
         e.preventDefault();
         if (!newCatName.trim()) return;
         if (localCategories[newCatName.trim()]) {
-            alert("Nama kategori ini sudah ada Bos!");
+            setAlertModal({ isOpen: true, message: "Nama kategori ini sudah ada Bos!" });
             return;
         }
         const updated = { ...localCategories };
@@ -109,6 +249,29 @@ const Settings = ({
         setNewCatName("");
         setNewCatIcon("DollarSign");
         setNewCatColor("bg-black");
+    };
+
+    // --- DnD Reorder Handler ---
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+
+        if (active.id !== over?.id) {
+            setLocalCategories((items) => {
+                const keys = Object.keys(items);
+                const oldIndex = keys.indexOf(active.id);
+                const newIndex = keys.indexOf(over.id);
+
+                const newKeys = arrayMove(keys, oldIndex, newIndex);
+
+                // Rebuild the object
+                const newLocalCategories = {};
+                newKeys.forEach(k => {
+                    newLocalCategories[k] = items[k];
+                });
+
+                return newLocalCategories;
+            });
+        }
     };
 
     const walletInfo = WALLETS[activeSettingsWallet];
@@ -187,26 +350,28 @@ const Settings = ({
                     </div>
 
                     <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                        {Object.keys(localCategories).map(cat => (
-                            <div
-                                key={cat}
-                                className={`flex justify-between items-center p-3 border-4 border-black cursor-pointer transition-transform ${editingCategory === cat ? 'bg-black text-white translate-x-1' : 'bg-white hover:bg-gray-100'}`}
-                                onClick={() => setEditingCategory(cat)}
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={Object.keys(localCategories)}
+                                strategy={verticalListSortingStrategy}
                             >
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-1 border-2 ${editingCategory === cat ? 'border-white bg-white text-black' : 'border-black ' + getCategoryColor(localCategories[cat].color)}`}>
-                                        <CategoryIcon iconName={localCategories[cat].icon} size={20} />
-                                    </div>
-                                    <span className="font-bold uppercase text-sm truncate max-w-[120px]">{cat}</span>
-                                </div>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat); }}
-                                    className="p-1 hover:bg-red-500 hover:text-white transition-colors text-gray-400"
-                                >
-                                    <Icons.Trash2 size={16} />
-                                </button>
-                            </div>
-                        ))}
+                                {Object.keys(localCategories).map((cat) => (
+                                    <SortableCategoryItem
+                                        key={cat}
+                                        id={cat}
+                                        cat={cat}
+                                        categoryData={localCategories[cat]}
+                                        isEditing={editingCategory === cat}
+                                        onEdit={setEditingCategory}
+                                        onDelete={handleDeleteCategory}
+                                    />
+                                ))}
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 </div>
 
@@ -317,6 +482,30 @@ const Settings = ({
                     )}
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title="Hapus Kategori?"
+                message={`Yakin mau hapus kategori "${confirmModal.catName}" beserta isinya?`}
+                onConfirm={confirmDeleteCategory}
+                onCancel={() => setConfirmModal({ isOpen: false, catName: null })}
+            />
+
+            <AlertModal
+                isOpen={alertModal.isOpen}
+                message={alertModal.message}
+                onClose={() => setAlertModal({ isOpen: false, message: '' })}
+            />
+
+            <ConfirmModal
+                isOpen={switchTarget !== null}
+                title="PERINGATAN!"
+                message="Ada editan yang belum divalidasi dan disimpan. Kalo pindah dompet atau mode, editan ini bakal HANGUS!"
+                cancelText="KEMBALI KE EDITOR"
+                confirmText="YAKIN PINDAH"
+                onCancel={() => setSwitchTarget(null)}
+                onConfirm={() => executeSwitch(switchTarget.type, switchTarget.value)}
+            />
         </div>
     );
 };

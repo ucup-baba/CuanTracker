@@ -1,0 +1,1 @@
+{"name":"CuanTracker","short_name":"CuanTracker","description":"Aplikasi pencatatan keuangan pribadi & asrama bergaya neo-brutalism.","start_url":"/","display":"standalone","background_color":"#fce7f3","theme_color":"#fef08a","lang":"en","scope":"/","orientation":"portrait","icons":[{"src":"icon.svg","sizes":"192x192 512x512","type":"image/svg+xml","purpose":"any maskable"}]}
