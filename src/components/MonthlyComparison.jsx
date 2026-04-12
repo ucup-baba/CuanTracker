@@ -39,8 +39,8 @@ const MonthlyComparison = ({ isOpen, onClose, transactions, getCategoriesForWall
 
     // ========== Compute month data (MUST be before early return) ==========
     const monthData = useMemo(() => {
-        // Hanya tampilkan transaksi wallet Pribadi
-        const pribadiTxs = (transactions || []).filter(t => t.wallet === 'pribadi');
+        const targetWallets = activeWallet === 'all' ? ['pribadi', 'asrama'] : [activeWallet];
+        const activeTxs = (transactions || []).filter(t => targetWallets.includes(t.wallet));
 
         const filterByMonth = (txs, month, year) => {
             return txs.filter(t => {
@@ -50,12 +50,12 @@ const MonthlyComparison = ({ isOpen, onClose, transactions, getCategoriesForWall
             });
         };
 
-        const currentMonthTxs = filterByMonth(pribadiTxs, selectedMonth, selectedYear);
+        const currentMonthTxs = filterByMonth(activeTxs, selectedMonth, selectedYear);
 
         // Previous month for comparison
         const prevMonth = selectedMonth === 0 ? 11 : selectedMonth - 1;
         const prevYear = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
-        const prevMonthTxs = filterByMonth(pribadiTxs, prevMonth, prevYear);
+        const prevMonthTxs = filterByMonth(activeTxs, prevMonth, prevYear);
 
         const calcTotals = (txs) => {
             let income = 0, expense = 0;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
-import { DollarSign, Wallet } from 'lucide-react';
+import { DollarSign, Shield } from 'lucide-react';
+import { getAllAllowedEmails, getRoleFromEmail, ROLE_CONFIG } from '../constants';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -9,22 +10,14 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Filter email yang diizinkan (Hardcoded rules)
-    const allowedGoogleEmail = "ucupbaba0704@gmail.com";
     const allowedPasswordEmail = "superbq@bqmail.com";
 
     const handleGoogleLogin = async () => {
         try {
             setLoading(true);
             setError('');
-            const result = await signInWithPopup(auth, googleProvider);
-            const user = result.user;
-
-            // Cek apakah email sesuai dengan allowedGoogleEmail
-            if (user.email !== allowedGoogleEmail) {
-                await auth.signOut();
-                setError('Maaf, email Anda tidak diizinkan masuk ke aplikasi ini.');
-            }
+            await signInWithPopup(auth, googleProvider);
+            // All Google logins are accepted now — role determined by getRoleFromEmail
         } catch (err) {
             setError(err.message);
         } finally {
@@ -61,7 +54,7 @@ const Login = () => {
                 </div>
 
                 <h1 className="text-4xl font-black uppercase tracking-tighter text-center mb-2">Cuan<br />Tracker<span className="text-yellow-400">.</span></h1>
-                <p className="font-bold text-gray-500 uppercase tracking-widest text-sm mb-8 text-center border-b-4 border-black pb-4 w-full">Area Terlarang. Khusus Bos Besar.</p>
+                <p className="font-bold text-gray-500 uppercase tracking-widest text-sm mb-8 text-center border-b-4 border-black pb-4 w-full">Pencatatan Keuangan Asrama</p>
 
                 {error && (
                     <div className="w-full bg-red-500 text-white font-bold p-4 border-4 border-black mb-6 text-sm">
@@ -78,7 +71,7 @@ const Login = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-yellow-50 border-4 border-black p-3 font-bold focus:outline-none focus:bg-yellow-100 transition-colors"
-                            placeholder="bos@email.com"
+                            placeholder="email@asrama.com"
                             required
                         />
                     </div>
@@ -98,7 +91,7 @@ const Login = () => {
                         disabled={loading}
                         className="w-full bg-black text-white font-black uppercase tracking-widest text-lg py-4 border-4 border-black hover:bg-yellow-400 hover:text-black transition-colors pop-shadow mt-2 disabled:opacity-50"
                     >
-                        {loading ? 'MEMPROSES...' : 'MASUK GOY 🚀'}
+                        {loading ? 'MEMPROSES...' : 'MASUK 🚀'}
                     </button>
                 </form>
 
@@ -112,7 +105,7 @@ const Login = () => {
                 <button
                     onClick={handleGoogleLogin}
                     disabled={loading}
-                    className="w-full bg-white text-black font-black uppercase tracking-widest text-lg py-4 border-4 border-black hover:bg-gray-100 flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 pop-shadow"
+                    className="w-full bg-white text-black font-black uppercase tracking-widest text-lg py-4 border-4 border-black hover:bg-gray-100 flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 pop-shadow mb-4"
                 >
                     <svg className="w-6 h-6" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -123,6 +116,23 @@ const Login = () => {
                     LOGIN VIA GOOGLE
                 </button>
 
+                {/* Divider for Pengurus */}
+                <div className="w-full flex items-center gap-4 mb-4 mt-4">
+                    <div className="h-0.5 bg-emerald-300 flex-1"></div>
+                    <span className="font-black uppercase text-xs text-emerald-600 tracking-widest">PENGURUS</span>
+                    <div className="h-0.5 bg-emerald-300 flex-1"></div>
+                </div>
+
+                {/* Tombol Login Pengurus */}
+                <button
+                    onClick={handleGoogleLogin}
+                    disabled={loading}
+                    className="w-full bg-emerald-500 text-white font-black uppercase tracking-widest text-base py-4 border-4 border-black hover:bg-emerald-600 flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 pop-shadow"
+                >
+                    <Shield size={22} strokeWidth={3} />
+                    LOGIN PENGURUS
+                </button>
+                <p className="text-xs text-slate-400 mt-3 text-center font-bold">Login dengan Gmail untuk akses Dashboard Pengurus<br/>Perlu persetujuan admin.</p>
             </div>
         </div>
     );

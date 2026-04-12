@@ -8,7 +8,9 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
         ? 'Total Semua'
         : activeWallet === 'asrama'
             ? 'Asrama'
-            : 'Pribadi';
+            : activeWallet === 'putri'
+                ? 'Asrama Putri'
+                : 'Pribadi';
 
     const heroColor = activeWallet === 'asrama' ? 'bg-indigo-500' : activeWallet === 'pribadi' ? 'bg-blue-500' : 'bg-blue-500';
 

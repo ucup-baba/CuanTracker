@@ -3,26 +3,87 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Fungsi untuk memvalidasi apakah user yang login punya email VIP
-    function isVIP() {
+    // Email VIP Putra (full access to global collections)
+    function isPutra() {
       return request.auth != null && 
              (request.auth.token.email == "ucupbaba0704@gmail.com" || 
               request.auth.token.email == "superbq@bqmail.com");
     }
 
-    // Mengamankan koleksi transaksi global
+    // Email Putri (access to putri collections only)
+    function isPutri() {
+      return request.auth != null && 
+             (request.auth.token.email == "bqputri2023@gmail.com" ||
+              request.auth.token.email == "patrabq.group@gmail.com");
+    }
+
+    // Admin Pengurus (full control of pengurus features)
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email == "baitulqowwam2011@gmail.com";
+    }
+
+    // Any authenticated user (for pengurus access - approval handled in app)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // === PENGURUS USER MANAGEMENT ===
+
+    // pengurusUsers: admin can read/write all, users can read/write their own doc
+    match /pengurusUsers/{userId} {
+      allow read, write: if isAdmin();
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // === GLOBAL (PUTRA) COLLECTIONS ===
+
+    // Transaksi global (Putra read/write, Admin + approved pengurus read-only)
     match /globalTransactions/{document=**} {
-      allow read, write: if isVIP();
+      allow read, write: if isPutra();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
     }
 
-    // Mengamankan koleksi pengaturan kategori global
+    // Pengaturan kategori global (Putra only)
     match /globalSettings/{document=**} {
-      allow read, write: if isVIP();
+      allow read, write: if isPutra();
     }
 
-    // Mengamankan koleksi riwayat opname kas global
+    // Riwayat opname kas global (Putra read/write, Pengurus read-only)
     match /globalCashMatches/{document=**} {
-      allow read, write: if isVIP();
+      allow read, write: if isPutra();
+      allow read: if isAdmin();
+    }
+
+    // Utang/piutang global (Putra only)
+    match /globalDebts/{document=**} {
+      allow read, write: if isPutra();
+    }
+
+    // === PUTRI COLLECTIONS ===
+
+    // Transaksi putri (Putri read/write, Pengurus read-only)
+    match /putriTransactions/{document=**} {
+      allow read, write: if isPutri();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
+    }
+
+    // Pengaturan kategori putri (Putri only)
+    match /putriSettings/{document=**} {
+      allow read, write: if isPutri();
+    }
+
+    // Riwayat opname kas putri (Putri read/write, Pengurus read-only)
+    match /putriCashMatches/{document=**} {
+      allow read, write: if isPutri();
+      allow read: if isAdmin();
+    }
+
+    // Utang/piutang putri (Putri only)
+    match /putriDebts/{document=**} {
+      allow read, write: if isPutri();
     }
   }
 }

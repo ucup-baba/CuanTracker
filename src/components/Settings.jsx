@@ -95,17 +95,19 @@ const SortableCategoryItem = ({ id, cat, categoryData, isEditing, onEdit, onDele
 const Settings = ({
     pribadiCategories, pribadiIncomeCategories,
     asramaCategories, asramaIncomeCategories,
-    onSaveCategories, onBack, setDirty
+    onSaveCategories, onBack, setDirty,
+    availableWallets
 }) => {
-    const [activeSettingsWallet, setActiveSettingsWallet] = useState('pribadi');
+    const defaultWallet = availableWallets && availableWallets.length > 0 ? availableWallets[0] : 'pribadi';
+    const [activeSettingsWallet, setActiveSettingsWallet] = useState(defaultWallet);
     const [activeTab, setActiveTab] = useState('expense');
 
     // Get the right categories for current wallet+tab
     const getCats = () => {
-        if (activeSettingsWallet === 'pribadi') {
-            return activeTab === 'expense' ? JSON.parse(JSON.stringify(pribadiCategories)) : JSON.parse(JSON.stringify(pribadiIncomeCategories));
+        if (activeSettingsWallet === 'asrama') {
+            return activeTab === 'expense' ? JSON.parse(JSON.stringify(asramaCategories)) : JSON.parse(JSON.stringify(asramaIncomeCategories));
         }
-        return activeTab === 'expense' ? JSON.parse(JSON.stringify(asramaCategories)) : JSON.parse(JSON.stringify(asramaIncomeCategories));
+        return activeTab === 'expense' ? JSON.parse(JSON.stringify(pribadiCategories)) : JSON.parse(JSON.stringify(pribadiIncomeCategories));
     };
 
     const [localCategories, setLocalCategories] = useState(getCats());
@@ -132,9 +134,9 @@ const Settings = ({
     );
 
     const isDirty = useMemo(() => {
-        const originalCats = activeSettingsWallet === 'pribadi'
-            ? (activeTab === 'expense' ? pribadiCategories : pribadiIncomeCategories)
-            : (activeTab === 'expense' ? asramaCategories : asramaIncomeCategories);
+        const originalCats = activeSettingsWallet === 'asrama'
+            ? (activeTab === 'expense' ? asramaCategories : asramaIncomeCategories)
+            : (activeTab === 'expense' ? pribadiCategories : pribadiIncomeCategories);
         return JSON.stringify(localCategories) !== JSON.stringify(originalCats);
     }, [localCategories, activeSettingsWallet, activeTab, pribadiCategories, pribadiIncomeCategories, asramaCategories, asramaIncomeCategories]);
 
@@ -154,10 +156,10 @@ const Settings = ({
 
     const refreshLocal = (walletId, tabType) => {
         let cats;
-        if (walletId === 'pribadi') {
-            cats = tabType === 'expense' ? pribadiCategories : pribadiIncomeCategories;
-        } else {
+        if (walletId === 'asrama') {
             cats = tabType === 'expense' ? asramaCategories : asramaIncomeCategories;
+        } else {
+            cats = tabType === 'expense' ? pribadiCategories : pribadiIncomeCategories;
         }
         setLocalCategories(JSON.parse(JSON.stringify(cats)));
         setEditingCategory(null);
@@ -291,26 +293,28 @@ const Settings = ({
             </div>
 
             {/* Wallet Selector */}
-            <div className="flex gap-4 mb-4">
-                <button
-                    onClick={() => handleSwitchWallet('pribadi')}
-                    className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${activeSettingsWallet === 'pribadi' ? 'bg-yellow-400 text-black pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                >
-                    <span className={`p-1 border-2 ${activeSettingsWallet === 'pribadi' ? 'border-black bg-white' : 'border-gray-300 bg-white'}`}>
-                        <Icons.Wallet size={16} strokeWidth={3} />
-                    </span>
-                    Pribadi
-                </button>
-                <button
-                    onClick={() => handleSwitchWallet('asrama')}
-                    className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${activeSettingsWallet === 'asrama' ? 'bg-indigo-400 text-white pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                >
-                    <span className={`p-1 border-2 ${activeSettingsWallet === 'asrama' ? 'border-black bg-white text-black' : 'border-gray-300 bg-white'}`}>
-                        <Icons.Home size={16} strokeWidth={3} />
-                    </span>
-                    Asrama
-                </button>
-            </div>
+            {(!availableWallets || availableWallets.length > 1) && (
+                <div className="flex gap-4 mb-4">
+                    <button
+                        onClick={() => handleSwitchWallet('pribadi')}
+                        className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${activeSettingsWallet === 'pribadi' ? 'bg-yellow-400 text-black pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    >
+                        <span className={`p-1 border-2 ${activeSettingsWallet === 'pribadi' ? 'border-black bg-white' : 'border-gray-300 bg-white'}`}>
+                            <Icons.Wallet size={16} strokeWidth={3} />
+                        </span>
+                        Pribadi
+                    </button>
+                    <button
+                        onClick={() => handleSwitchWallet('asrama')}
+                        className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${activeSettingsWallet === 'asrama' ? 'bg-indigo-400 text-white pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    >
+                        <span className={`p-1 border-2 ${activeSettingsWallet === 'asrama' ? 'border-black bg-white text-black' : 'border-gray-300 bg-white'}`}>
+                            <Icons.Home size={16} strokeWidth={3} />
+                        </span>
+                        Asrama
+                    </button>
+                </div>
+            )}
 
             {/* Tab: Pengeluaran vs Pemasukan */}
             <div className="flex gap-4 mb-8">

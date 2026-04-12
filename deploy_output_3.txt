@@ -1,0 +1,16 @@
+
+=== Deploying to 'cuantracker-me'...
+
+i  deploying hosting
+i  hosting[cuantracker-me]: beginning deploy...
+i  hosting[cuantracker-me]: found 8 files in dist
+✔  hosting[cuantracker-me]: file upload complete
+i  hosting[cuantracker-me]: finalizing version...
+✔  hosting[cuantracker-me]: version finalized
+i  hosting[cuantracker-me]: releasing new version...
+✔  hosting[cuantracker-me]: release complete
+
+✔  Deploy complete!
+
+Project Console: https://console.firebase.google.com/project/cuantracker-me/overview
+Hosting URL: https://cuantracker-me.web.app

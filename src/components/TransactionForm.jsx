@@ -4,7 +4,7 @@ import { WALLETS } from '../constants';
 import { Wallet, Home, ArrowRightLeft, Smartphone, Info } from 'lucide-react';
 import AlertModal from './AlertModal';
 
-const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction }) => {
+const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction, availableWallets = ['pribadi', 'asrama'] }) => {
     const [text, setText] = useState('');
     const [amountDisplay, setAmountDisplay] = useState('');
     const [amountRaw, setAmountRaw] = useState(0);
@@ -96,14 +96,14 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
             const currentDate = editingTransaction ? editingTransaction.date : new Date().toISOString().split('T')[0];
 
             // E-money mode: create TWO transactions (income offset + expense)
-            if (isEmoney && type === 'expense' && wallet === 'pribadi' && !editingTransaction) {
+            if (isEmoney && type === 'expense' && (wallet === 'pribadi' || wallet === 'putri') && !editingTransaction) {
                 // 1. Income transaction: Lain-lain Masuk / Transfer Masuk
                 const incomeTx = {
                     id: Math.floor(Math.random() * 100000000),
                     text: `[E-Money] ${text}`,
                     amount: amountRaw,
                     type: 'income',
-                    wallet: 'pribadi',
+                    wallet: wallet,
                     category: 'Lain-lain Masuk',
                     subCategory: 'Transfer Masuk',
                     date: currentDate,
@@ -117,7 +117,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                     text: `[E-Money] ${text}`,
                     amount: amountRaw,
                     type: 'expense',
-                    wallet: 'pribadi',
+                    wallet: wallet,
                     category,
                     subCategory,
                     date: currentDate,
@@ -164,29 +164,31 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
             <form onSubmit={handleSubmit} className="space-y-6">
 
                 {/* Pilihan Dompet */}
-                <div>
-                    <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">Dompet</label>
-                    <div className="flex gap-4">
-                        <button
-                            type="button"
-                            onClick={() => { setWallet('pribadi'); resetSelections(); }}
-                            className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${wallet === 'pribadi' && type !== 'transfer' ? 'bg-yellow-400 text-black pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                            disabled={type === 'transfer'}
-                        >
-                            <span className="p-1 border-2 border-black bg-white"><Wallet size={16} strokeWidth={3} /></span>
-                            Pribadi
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => { setWallet('asrama'); resetSelections(); }}
-                            className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${wallet === 'asrama' && type !== 'transfer' ? 'bg-indigo-400 text-white pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                            disabled={type === 'transfer'}
-                        >
-                            <span className="p-1 border-2 border-black bg-white text-black"><Home size={16} strokeWidth={3} /></span>
-                            Asrama
-                        </button>
+                {availableWallets.length > 1 && (
+                    <div>
+                        <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">Dompet</label>
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={() => { setWallet('pribadi'); resetSelections(); }}
+                                className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${wallet === 'pribadi' && type !== 'transfer' ? 'bg-yellow-400 text-black pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                disabled={type === 'transfer'}
+                            >
+                                <span className="p-1 border-2 border-black bg-white"><Wallet size={16} strokeWidth={3} /></span>
+                                Pribadi
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setWallet('asrama'); resetSelections(); }}
+                                className={`flex-1 py-3 border-4 border-black font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all ${wallet === 'asrama' && type !== 'transfer' ? 'bg-indigo-400 text-white pop-shadow-sm scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                                disabled={type === 'transfer'}
+                            >
+                                <span className="p-1 border-2 border-black bg-white text-black"><Home size={16} strokeWidth={3} /></span>
+                                Asrama
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Pilihan Jenis Transaksi */}
                 <div className="flex gap-3">
@@ -204,13 +206,15 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                     >
                         Masuk
                     </button>
-                    <button
-                        type="button"
-                        onClick={() => { setType('transfer'); resetSelections(); }}
-                        className={`flex-1 py-4 border-4 border-black font-black uppercase tracking-widest text-base transition-all ${type === 'transfer' ? 'bg-purple-500 text-white pop-shadow scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
-                    >
-                        Transfer
-                    </button>
+                    {availableWallets.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={() => { setType('transfer'); resetSelections(); }}
+                            className={`flex-1 py-4 border-4 border-black font-black uppercase tracking-widest text-base transition-all ${type === 'transfer' ? 'bg-purple-500 text-white pop-shadow scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                        >
+                            Transfer
+                        </button>
+                    )}
                 </div>
 
                 {/* Transfer: Pilihan Asal & Tujuan */}
@@ -250,7 +254,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                                 </label>
 
                                 {/* E-money Toggle - Only for Pribadi Expense */}
-                                {type === 'expense' && wallet === 'pribadi' && !editingTransaction && (
+                                {type === 'expense' && (wallet === 'pribadi' || wallet === 'putri') && !editingTransaction && (
                                     <button
                                         type="button"
                                         onClick={() => setIsEmoney(!isEmoney)}
@@ -274,7 +278,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                             </div>
 
                             {/* E-money Info Banner */}
-                            {isEmoney && type === 'expense' && wallet === 'pribadi' && (
+                            {isEmoney && type === 'expense' && (wallet === 'pribadi' || wallet === 'putri') && (
                                 <div className="bg-cyan-50 border-4 border-cyan-400 p-3 mb-3 flex items-start gap-2">
                                     <Info size={18} className="text-cyan-600 mt-0.5 shrink-0" strokeWidth={3} />
                                     <p className="text-xs font-bold text-cyan-800 leading-relaxed">
