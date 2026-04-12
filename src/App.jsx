@@ -14,6 +14,8 @@ import Toast from './components/Toast';
 import ConfirmModal from './components/ConfirmModal';
 import Calculator from './components/Calculator';
 import CashMatchModal from './components/CashMatchModal';
+import MonthlyComparison from './components/MonthlyComparison';
+import DebtModal from './components/DebtModal';
 import {
     defaultCategories, defaultIncomeCategories,
     defaultAsramaCategories, defaultAsramaIncomeCategories,
@@ -41,10 +43,15 @@ export default function App() {
 
     // Calculator State
     const [showCalculator, setShowCalculator] = useState(false);
+    const [showComparison, setShowComparison] = useState(false);
 
     // Cash Match (Opname Kas) State
     const [showCashMatch, setShowCashMatch] = useState(false);
     const [cashMatches, setCashMatches] = useState([]);
+
+    // Debt State
+    const [showDebtModal, setShowDebtModal] = useState(false);
+    const [debts, setDebts] = useState([]);
 
     // Unsaved settings tracking
     const [isSettingsDirty, setIsSettingsDirty] = useState(false);
@@ -90,9 +97,18 @@ export default function App() {
             setCashMatches(matchData);
         });
 
+        // Ambil data utang/piutang
+        const qDebt = query(collection(db, 'globalDebts'));
+        const unsubscribeDebt = onSnapshot(qDebt, (snapshot) => {
+            const debtData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            debtData.sort((a, b) => new Date(b.date) - new Date(a.date));
+            setDebts(debtData);
+        });
+
         return () => {
             unsubscribe();
             unsubscribeMatch();
+            unsubscribeDebt();
         };
     }, [user]);
 
@@ -419,6 +435,8 @@ export default function App() {
                 onLogoClick={handleLogoClick}
                 onOpenCalculator={() => setShowCalculator(true)}
                 onOpenCashMatch={() => setShowCashMatch(true)}
+                onOpenComparison={() => setShowComparison(true)}
+                onOpenDebt={() => setShowDebtModal(true)}
             />
 
             <Marquee text="AWAS KANKER (KANTONG KERING)" bg="bg-red-500" textCol="text-black" />
@@ -581,6 +599,14 @@ export default function App() {
                 onClose={() => setShowCalculator(false)}
             />
 
+            <MonthlyComparison
+                isOpen={showComparison}
+                onClose={() => setShowComparison(false)}
+                transactions={transactions}
+                getCategoriesForWallet={getCategoriesForWallet}
+                activeWallet={activeWallet}
+            />
+
             <CashMatchModal
                 isOpen={showCashMatch}
                 onClose={() => setShowCashMatch(false)}
@@ -607,6 +633,13 @@ export default function App() {
                     navigate(unsavedNav);
                     setUnsavedNav(null);
                 }}
+            />
+
+            <DebtModal
+                isOpen={showDebtModal}
+                onClose={() => setShowDebtModal(false)}
+                debts={debts}
+                addTransaction={addTransaction}
             />
         </div>
     );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet, TrendingUp, TrendingDown, Home, ArrowRightLeft } from 'lucide-react';
-import { formatRupiah } from '../utils';
+import { formatRupiah, formatRupiahShort } from '../utils';
 import { WALLETS } from '../constants';
 
 const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, activeWallet, onToggleSummary, activeSummary }) => {
@@ -42,7 +42,10 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-white px-2 md:px-3 py-1 border-2 border-black inline-block">Masuk</h3>
                     <div className="bg-black text-white p-1 md:p-2 rounded-full self-start md:self-auto"><TrendingUp size={16} className="md:w-6 md:h-6" /></div>
                 </div>
-                <p className="text-xl md:text-4xl font-black tracking-tighter truncate">{formatRupiah(totalIncome)}</p>
+                <p className="text-xl md:text-4xl font-black tracking-tighter truncate">
+                    <span className="md:hidden">{formatRupiahShort(totalIncome)}</span>
+                    <span className="hidden md:inline">{formatRupiah(totalIncome)}</span>
+                </p>
             </div>
 
             {/* Total Pengeluaran */}
@@ -54,7 +57,10 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-black text-white px-2 md:px-3 py-1 border-2 border-transparent inline-block">Keluar</h3>
                     <div className="bg-white text-black p-1 md:p-2 rounded-full border-2 border-black self-start md:self-auto"><TrendingDown size={16} className="md:w-6 md:h-6" /></div>
                 </div>
-                <p className="text-xl md:text-4xl font-black tracking-tighter text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] md:drop-shadow-[4px_4px_0_rgba(0,0,0,1)] truncate">{formatRupiah(totalExpense)}</p>
+                <p className="text-xl md:text-4xl font-black tracking-tighter text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] md:drop-shadow-[4px_4px_0_rgba(0,0,0,1)] truncate">
+                    <span className="md:hidden">{formatRupiahShort(totalExpense)}</span>
+                    <span className="hidden md:inline">{formatRupiah(totalExpense)}</span>
+                </p>
             </div>
 
             {/* Total Transfer */}
@@ -66,7 +72,10 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-white px-2 md:px-3 py-1 border-2 border-black inline-block">Transfer</h3>
                     <div className="bg-black text-white p-1 md:p-2 rounded-full self-start md:self-auto"><ArrowRightLeft size={16} className="md:w-6 md:h-6" /></div>
                 </div>
-                <p className="text-xl md:text-4xl font-black tracking-tighter text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] md:drop-shadow-[4px_4px_0_rgba(0,0,0,1)] truncate">{formatRupiah(totalTransfer)}</p>
+                <p className="text-xl md:text-4xl font-black tracking-tighter text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] md:drop-shadow-[4px_4px_0_rgba(0,0,0,1)] truncate">
+                    <span className="md:hidden">{formatRupiahShort(totalTransfer)}</span>
+                    <span className="hidden md:inline">{formatRupiah(totalTransfer)}</span>
+                </p>
             </div>
         </div>
     );

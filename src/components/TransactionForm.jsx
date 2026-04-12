@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CategoryIcon } from './CategoryIcon';
 import { WALLETS } from '../constants';
-import { Wallet, Home, ArrowRightLeft } from 'lucide-react';
+import { Wallet, Home, ArrowRightLeft, Smartphone, Info } from 'lucide-react';
 import AlertModal from './AlertModal';
 
 const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction }) => {
@@ -12,6 +12,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
     const [wallet, setWallet] = useState(activeWallet !== 'all' ? activeWallet : 'pribadi');
     const [category, setCategory] = useState('');
     const [subCategory, setSubCategory] = useState('');
+    const [isEmoney, setIsEmoney] = useState(false);
     const [alertModal, setAlertModal] = useState({ isOpen: false, message: '' });
 
     // Transfer fields
@@ -92,19 +93,52 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 setAlertModal({ isOpen: true, message: 'Pilih Kategori dan Sub-Kategori dulu Bos!' });
                 return;
             }
-            const txData = {
-                text,
-                amount: amountRaw,
-                type,
-                wallet,
-                category,
-                subCategory,
-                date: editingTransaction ? editingTransaction.date : new Date().toISOString().split('T')[0]
-            };
-            if (editingTransaction) {
-                onUpdateTransaction(editingTransaction.id, txData);
+            const currentDate = editingTransaction ? editingTransaction.date : new Date().toISOString().split('T')[0];
+
+            // E-money mode: create TWO transactions (income offset + expense)
+            if (isEmoney && type === 'expense' && wallet === 'pribadi' && !editingTransaction) {
+                // 1. Income transaction: Lain-lain Masuk / Transfer Masuk
+                const incomeTx = {
+                    id: Math.floor(Math.random() * 100000000),
+                    text: `[E-Money] ${text}`,
+                    amount: amountRaw,
+                    type: 'income',
+                    wallet: 'pribadi',
+                    category: 'Lain-lain Masuk',
+                    subCategory: 'Transfer Masuk',
+                    date: currentDate,
+                    isEmoney: true,
+                };
+                onAddTransaction(incomeTx);
+
+                // 2. Expense transaction: as selected
+                const expenseTx = {
+                    id: Math.floor(Math.random() * 100000000),
+                    text: `[E-Money] ${text}`,
+                    amount: amountRaw,
+                    type: 'expense',
+                    wallet: 'pribadi',
+                    category,
+                    subCategory,
+                    date: currentDate,
+                    isEmoney: true,
+                };
+                onAddTransaction(expenseTx);
             } else {
-                onAddTransaction({ id: Math.floor(Math.random() * 100000000), ...txData });
+                const txData = {
+                    text,
+                    amount: amountRaw,
+                    type,
+                    wallet,
+                    category,
+                    subCategory,
+                    date: currentDate,
+                };
+                if (editingTransaction) {
+                    onUpdateTransaction(editingTransaction.id, txData);
+                } else {
+                    onAddTransaction({ id: Math.floor(Math.random() * 100000000), ...txData });
+                }
             }
         }
 
@@ -114,6 +148,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
         setAmountRaw(0);
         setCategory('');
         setSubCategory('');
+        setIsEmoney(false);
         if (editingTransaction) setEditingTransaction(null);
     };
 
@@ -209,9 +244,46 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 {type !== 'transfer' && (
                     <div className="space-y-4">
                         <div>
-                            <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">
-                                Kategori {type === 'income' ? 'Pemasukan' : 'Utama'}
-                            </label>
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                <label className="font-black uppercase tracking-widest text-sm bg-black text-white inline-block px-3 py-1">
+                                    Kategori {type === 'income' ? 'Pemasukan' : 'Utama'}
+                                </label>
+
+                                {/* E-money Toggle - Only for Pribadi Expense */}
+                                {type === 'expense' && wallet === 'pribadi' && !editingTransaction && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEmoney(!isEmoney)}
+                                        className={`flex items-center gap-2 px-3 py-1 border-3 border-black font-black uppercase tracking-wider text-xs transition-all ${
+                                            isEmoney
+                                                ? 'bg-cyan-400 text-black pop-shadow-sm scale-105'
+                                                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                        <Smartphone size={14} strokeWidth={3} />
+                                        E-Money
+                                        <span className={`w-8 h-4 border-2 border-black relative inline-block transition-all ${
+                                            isEmoney ? 'bg-green-400' : 'bg-gray-300'
+                                        }`}>
+                                            <span className={`absolute top-0 w-3 h-3 bg-white border-2 border-black transition-all ${
+                                                isEmoney ? 'left-4' : 'left-0'
+                                            }`} />
+                                        </span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* E-money Info Banner */}
+                            {isEmoney && type === 'expense' && wallet === 'pribadi' && (
+                                <div className="bg-cyan-50 border-4 border-cyan-400 p-3 mb-3 flex items-start gap-2">
+                                    <Info size={18} className="text-cyan-600 mt-0.5 shrink-0" strokeWidth={3} />
+                                    <p className="text-xs font-bold text-cyan-800 leading-relaxed">
+                                        <span className="uppercase font-black">Mode E-Money ON!</span> Sistem akan otomatis membuat 2 transaksi:
+                                        <span className="text-green-600"> +Masuk</span> (Lain-lain Masuk / Transfer Masuk) &
+                                        <span className="text-red-500"> -Keluar</span> (sesuai kategori). Saldo cash tetap aman karena yang bayar e-money!
+                                    </p>
+                                </div>
+                            )}
                             <div className="flex overflow-x-auto gap-3 pb-4 snap-x">
                                 {Object.keys(activeCategories).map(cat => {
                                     const catData = activeCategories[cat];
