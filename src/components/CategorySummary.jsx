@@ -65,11 +65,21 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
         let total = 0;
 
         transactions.forEach(t => {
-            if (t.type === 'transfer') return;
-            if (t.type !== type) return;
+            let effType = t.type;
+            if (t.type === 'transfer') {
+                if (activeWallet === 'asrama') {
+                    if (t.fromWallet === 'asrama') effType = 'expense';
+                    else if (t.toWallet === 'asrama') effType = 'income';
+                } else if (activeWallet === 'putri') {
+                    if (t.fromWallet === 'putri') effType = 'expense';
+                    else if (t.toWallet === 'putri') effType = 'income';
+                }
+            }
 
-            const catLabel = t.category || 'Lain-lain';
-            const subCatLabel = t.subCategory || 'Tanpa Sub';
+            if (effType !== type) return;
+
+            const catLabel = t.type === 'transfer' ? (type === 'income' ? 'Transfer Masuk' : 'Transfer Keluar') : (t.category || 'Lain-lain');
+            const subCatLabel = t.type === 'transfer' ? (type === 'income' ? `Dari ${WALLETS[t.fromWallet]?.label || t.fromWallet}` : `Ke ${WALLETS[t.toWallet]?.label || t.toWallet}`) : (t.subCategory || 'Tanpa Sub');
 
             if (!sums[catLabel]) {
                 sums[catLabel] = { amount: 0, subCategories: {} };

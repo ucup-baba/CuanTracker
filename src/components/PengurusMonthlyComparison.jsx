@@ -7,7 +7,8 @@ import {
 import { CategoryIcon, getCategoryColor } from './CategoryIcon';
 import {
     defaultAsramaCategories, defaultAsramaIncomeCategories,
-    defaultPutriCategories, defaultPutriIncomeCategories
+    defaultPutriCategories, defaultPutriIncomeCategories,
+    WALLETS
 } from '../constants';
 
 const MONTH_NAMES = [
@@ -39,7 +40,6 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
 
         const filterByMonth = (txs, month, year) => {
             return txs.filter(t => {
-                if (t.type === 'transfer') return false; 
                 const d = new Date(t.date);
                 return d.getMonth() === month && d.getFullYear() === year;
             });
@@ -58,10 +58,21 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
             let putraExpense = 0, putriExpense = 0;
 
             txs.forEach(t => {
-                if (t.type === 'income') {
+                let effType = t.type;
+                if (effType === 'transfer') {
+                    if (t.source === 'putra') {
+                        if (t.fromWallet === 'asrama') effType = 'expense';
+                        else if (t.toWallet === 'asrama') effType = 'income';
+                    } else if (t.source === 'putri') {
+                        if (t.fromWallet === 'putri') effType = 'expense';
+                        else if (t.toWallet === 'putri') effType = 'income';
+                    }
+                }
+
+                if (effType === 'income') {
                     income += t.amount;
                     if (t.source === 'putra') putraIncome += t.amount; else putriIncome += t.amount;
-                } else if (t.type === 'expense') {
+                } else if (effType === 'expense') {
                     expense += t.amount;
                     if (t.source === 'putra') putraExpense += t.amount; else putriExpense += t.amount;
                 }
@@ -77,9 +88,21 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
             let total = 0;
 
             txs.forEach(t => {
-                if (t.type !== type) return;
-                const catLabel = t.category || 'Lain-lain';
-                const subCatLabel = t.subCategory || 'Tanpa Sub';
+                let effType = t.type;
+                if (effType === 'transfer') {
+                    if (t.source === 'putra') {
+                        if (t.fromWallet === 'asrama') effType = 'expense';
+                        else if (t.toWallet === 'asrama') effType = 'income';
+                    } else if (t.source === 'putri') {
+                        if (t.fromWallet === 'putri') effType = 'expense';
+                        else if (t.toWallet === 'putri') effType = 'income';
+                    }
+                }
+
+                if (effType !== type) return;
+                
+                const catLabel = t.type === 'transfer' ? (type === 'income' ? 'Transfer Masuk' : 'Transfer Keluar') : (t.category || 'Lain-lain');
+                const subCatLabel = t.type === 'transfer' ? (type === 'income' ? `Dari ${WALLETS[t.fromWallet]?.label || t.fromWallet}` : `Ke ${WALLETS[t.toWallet]?.label || t.toWallet}`) : (t.subCategory || 'Tanpa Sub');
 
                 if (!sums[catLabel]) sums[catLabel] = { amount: 0, subCategories: {} };
                 sums[catLabel].amount += t.amount;
