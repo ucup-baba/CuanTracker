@@ -13,19 +13,8 @@ admin.initializeApp();
 const DRIVE_FOLDER_ID = '1Pj13RnWu1d2hx0_7MwjWj7cHrDmwPXhi';
 
 // Service Account credentials for Google Drive API
-const credentials = {
-    "type": "service_account",
-    "project_id": "cuantracker-me",
-    "private_key_id": "a454f279e8bfbba07f29d45a673efa5cd2966262",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCxyQsbHFkEHbjY\nYFoOPRkJvTlStWpzzgCasyqYtUdoxGIhbsU61u8qdcgzlL065fJGPOcABeswZPtZ\ns9pjNtX23LGQ1gA55i4guu8OnvzbCudgQvgZrtp0L2gmkBXktEkHmM0YqYAtybU4\nzMWPGLzhw5H18lLfMX1ahmywVoH+0EC8pUHvHBu1SHcN96SgMBmxVi7a34A9dqTJ\nsHGa3zGFEUFoSbtTz0/bhd1iKkEhGsLYFUvAkuoK1wVOmYJQ5r96SVHJaUZUlj+O\n3pawbVMF39suQj2tla6J3yWH+DJlWpXPUjpNHLq0NhM5S+qUhM54Flt/A8zzsgy+\ndpwnSc4hAgMBAAECggEADvkA6NC5fPehV4S+1NvnqcqwQxNRAq1+3sh3zgpXWB8Q\n6iKldOQA2q02dgSg7q7KuYhbxoRZFzdr9TUoz2oA+VRDFpD1TisA58QCidNRNYPc\nsl5VfXk8v+P1tCi2lU8rJtsDK+BrkX+fNehF+5wQXT2eo21b9hzZgygWy3+PnWVp\n3SWTVm3w+wyAj+U/OCa3OYhy8KSl82lW/A3QqjO9g6cDlLuoBFeo29Ix9Mg9Xrla\nIeorNi9Dp0MPmNyJMh69NCdfcDx0QClqbIYYbFLUluXoWkZBs/eLu+kdzYmrs9da\nAtL3rKMKzVPXi6RTLdjEQ10IwDOyqw3ZMTd9WtgcCQKBgQDVwLSQDpwhtN6L67/o\nYL4Avj+NFeYudi+MZGKf3rHOTqqc5GY10G0nBa6Om50xKKtUipG1gu0zh8PhnwQ6\nZfsRwoN8OmfHaUvlwmgGih/+05QBHqwsLuroin1KcFydII6PEw5UtcDRSGfsb3UK\n8c3M7F7RSCFNSyqMzU/HBMV+6QKBgQDU7Hx3yH7v6H40m4tup8YIFAF9HhZPRt35\npL8dXbORDfdQmriN6gq8xZTmIIpgc2gyNU/Rkf0I4SmVUF291jnD4cGwueiPa4GE\nrQhYKJwCLTS8cXtpSp1n9ETi2SfQW+MOWe+tvg4IibWQNbZwCEtKSj2dEcCj1hNh\n6BZPuXsCeQKBgAF6PIVGZJPjESq8bW4oxQdySTQrc5TcokWBKCFcw7PeXVWKSp6S\nmz6KzoMT1klRs6V487ridctGY/c6Ryg0LkEYLBp+uNrrAmhLKLbq23/CbKJ5WM1R\nYbRLyMPr9OftIq8gfZfeTb/klTtQJen2c+q3s4wUyI4lN90TSjrg8JCJAoGAEvAZ\nvfmqOKJgH0O6ahQoC+3jmAJGD7UI5zxc9zqvTvaECbpJMe4gGFwmezVnuV5qZRTS\nzZwDene0YCBuxgS4zJBWzuYqJh90vJ07QcQS5CqrJxuc02ecinNycQ7JeMHDdzJO\nnBBsZRwCdxof6OUD9U6XHlJG5QuUW7/txBeGNlkCgYBDbeS9EynMe1M8ny6d32gm\ntHFbALD/X1/lM2spnS9O5f3JeLsarz6H85/IlvyNDgAww60dzP0Tx/S9VATfSkGD\nSgTT3GaJj6E7SdjZb0gN6tvTIYpRvhRJJpgdCegeKthyjaZxCfDG1yt0NO5fSrwY\ndeOFXRD+vWWJt/XxyfOHTA==\n-----END PRIVATE KEY-----\n",
-    "client_email": "cuantracker-pdf-generator@cuantracker-me.iam.gserviceaccount.com",
-    "client_id": "114251640748182690888",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cuantracker-pdf-generator%40cuantracker-me.iam.gserviceaccount.com",
-    "universe_domain": "googleapis.com"
-};
+// (Credentials removed - feature disabled for now)
+const credentials = {};
 
 function formatRupiah(amount) {
     return 'Rp ' + amount.toLocaleString('id-ID');
@@ -157,6 +146,8 @@ async function runReportGeneration() {
     console.log('PDF generated at:', tempFilePath);
 
     // Upload to Google Drive
+    // Fitur dinonaktifkan sementara karena kunci dihapus
+    /*
     const auth = new google.auth.GoogleAuth({
         credentials,
         scopes: ['https://www.googleapis.com/auth/drive']
@@ -179,9 +170,10 @@ async function runReportGeneration() {
     });
 
     console.log(`PDF uploaded to Drive. File ID: ${file.data.id}`);
-    fs.unlinkSync(tempFilePath);
-
-    return { totalIncome, totalExpense, balance, transactionCount: transactions.length, driveFileId: file.data.id };
+    */
+    fs.unlinkSync(tempFilePath); // Tetap hapus file temp
+    
+    return { totalIncome, totalExpense, balance, transactionCount: transactions.length, driveFileId: null };
 }
 
 /**
