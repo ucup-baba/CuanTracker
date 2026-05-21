@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, query, orderBy, getDoc, getDocs, where, serverTimestamp, Timestamp } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signOut } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -24,5 +25,7 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+// Cloud Functions are deployed in asia-southeast2 (see functions/index.js).
+const functionsClient = getFunctions(app, 'asia-southeast2');
 
-export { app, analytics, db, auth, googleProvider, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, query, orderBy, getDoc, getDocs, where, serverTimestamp, Timestamp, signOut };
+export { app, analytics, db, auth, googleProvider, functionsClient, httpsCallable, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, query, orderBy, getDoc, getDocs, where, serverTimestamp, Timestamp, signOut };

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CategoryIcon } from './CategoryIcon';
 import { WALLETS } from '../constants';
-import { Wallet, Home, ArrowRightLeft, Smartphone, Info } from 'lucide-react';
+import { Wallet, Home, ArrowRightLeft, Smartphone, Info, Sparkles, Loader2 } from 'lucide-react';
 import AlertModal from './AlertModal';
+import { parseTransaction, parseAmountId } from '../ai/aiClient';
 
 const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesForWallet, activeWallet, editingTransaction, setEditingTransaction, availableWallets = ['pribadi', 'asrama'] }) => {
     const [text, setText] = useState('');
@@ -18,6 +19,24 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
     // Transfer fields
     const [fromWallet, setFromWallet] = useState('asrama');
     const [toWallet, setToWallet] = useState('pribadi');
+
+    // AI natural-language input
+    const [nlText, setNlText] = useState('');
+    const [nlLoading, setNlLoading] = useState(false);
+    const [nlError, setNlError] = useState('');
+    const [nlOk, setNlOk] = useState('');
+    const [nlAutoSave, setNlAutoSave] = useState(() => {
+        try { return localStorage.getItem('cuan-nl-autosave') === '1'; } catch { return false; }
+    });
+    // Holds the sub-category an AI parse wants, so the auto-select effect below
+    // doesn't clobber it with subCategories[0].
+    const pendingSubRef = useRef(null);
+
+    const toggleAutoSave = () => setNlAutoSave((v) => {
+        const nv = !v;
+        try { localStorage.setItem('cuan-nl-autosave', nv ? '1' : '0'); } catch { /* ignore */ }
+        return nv;
+    });
 
     // Update wallet when activeWallet changes
     useEffect(() => {
@@ -49,11 +68,129 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
 
     useEffect(() => {
         if (category && activeCategories[category]) {
-            setSubCategory(activeCategories[category].subCategories[0] || "");
+            const subs = activeCategories[category].subCategories || [];
+            // If an AI parse requested a specific sub-category, honor it once.
+            if (pendingSubRef.current && subs.includes(pendingSubRef.current)) {
+                setSubCategory(pendingSubRef.current);
+                pendingSubRef.current = null;
+            } else {
+                setSubCategory(subs[0] || "");
+                pendingSubRef.current = null;
+            }
         } else {
+            // category not (yet) valid for the current wallet/type — keep any
+            // pending sub so it can apply once activeCategories catches up.
             setSubCategory('');
         }
     }, [category, activeCategories]);
+
+    // Build the categories payload (compact: {wallet: {type: {cat: [subs]}}}) for the AI.
+    const buildCategoriesPayload = () => {
+        const mapCats = (obj) => Object.fromEntries(
+            Object.entries(obj || {}).map(([cat, d]) => [cat, d?.subCategories || []])
+        );
+        const out = {};
+        for (const w of availableWallets) {
+            out[w] = {
+                expense: mapCats(getCategoriesForWallet(w, 'expense')),
+                income: mapCats(getCategoriesForWallet(w, 'income')),
+            };
+        }
+        return out;
+    };
+
+    const applyParsed = (tx, fallbackText) => {
+        const amt = Number(tx.amount) || parseAmountId(fallbackText);
+        if (tx.type === 'transfer') {
+            setType('transfer');
+        } else {
+            const t = tx.type === 'income' ? 'income' : 'expense';
+            setType(t);
+            const w = availableWallets.includes(tx.wallet)
+                ? tx.wallet
+                : (activeWallet !== 'all' ? activeWallet : wallet);
+            setWallet(w);
+            const cats = getCategoriesForWallet(w, t);
+            if (tx.category && cats && cats[tx.category]) {
+                pendingSubRef.current = tx.subCategory || null;
+                setCategory(tx.category);
+            } else {
+                setCategory('');
+            }
+        }
+        setText(tx.text || fallbackText.toUpperCase());
+        setAmountRaw(amt);
+        setAmountDisplay(amt > 0 ? amt.toLocaleString('id-ID') : '');
+    };
+
+    // Build a ready-to-save transaction from an AI parse, or null if not
+    // confident enough (missing/invalid category, sub, or amount).
+    const buildAutoTx = (tx, q) => {
+        if (!tx || tx.type === 'transfer') return null;
+        const t = tx.type === 'income' ? 'income' : 'expense';
+        const w = availableWallets.includes(tx.wallet) ? tx.wallet : (activeWallet !== 'all' ? activeWallet : wallet);
+        const cats = getCategoriesForWallet(w, t);
+        if (!tx.category || !cats || !cats[tx.category]) return null;
+        const subs = cats[tx.category].subCategories || [];
+        let sub = tx.subCategory;
+        if (subs.length) { if (!subs.includes(sub)) sub = subs[0]; } else { sub = sub || ''; }
+        if (subs.length && !sub) return null;
+        const amount = Number(tx.amount) || parseAmountId(q);
+        if (!amount || amount <= 0) return null;
+        return {
+            id: Math.floor(Math.random() * 100000000),
+            text: tx.text || q.toUpperCase(),
+            amount,
+            type: t,
+            wallet: w,
+            category: tx.category,
+            subCategory: sub,
+            date: new Date().toISOString().split('T')[0],
+        };
+    };
+
+    const handleNlParse = async () => {
+        const q = nlText.trim();
+        if (!q) return;
+        setNlError('');
+        setNlOk('');
+        setNlLoading(true);
+        try {
+            const tx = await parseTransaction({
+                text: q,
+                wallets: availableWallets,
+                categories: buildCategoriesPayload(),
+                defaultWallet: activeWallet !== 'all' ? activeWallet : wallet,
+            });
+            if (!tx) {
+                setNlError('AI tidak mengembalikan hasil. Coba lagi atau isi manual.');
+                return;
+            }
+            if (nlAutoSave) {
+                const auto = buildAutoTx(tx, q);
+                if (auto) {
+                    onAddTransaction(auto);
+                    setNlOk(`✅ Tersimpan: ${auto.text} — Rp${auto.amount.toLocaleString('id-ID')}`);
+                    setNlText('');
+                    return;
+                }
+                // Not confident -> fall back to manual confirm.
+                applyParsed(tx, q);
+                setNlError('AI kurang yakin (kategori/nominal) — cek & simpan manual ya.');
+                return;
+            }
+            applyParsed(tx, q);
+            setNlText('');
+        } catch (e) {
+            // Fallback: at least fill amount + description locally.
+            const amt = parseAmountId(q);
+            if (amt) { setAmountRaw(amt); setAmountDisplay(amt.toLocaleString('id-ID')); }
+            setText(q.toUpperCase());
+            setNlError('AI gagal — terisi sebagian. ' + (e?.message || ''));
+        } finally {
+            setNlLoading(false);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -158,8 +295,56 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
     };
 
     return (
-        <div className="bg-white border-4 border-black p-8 pop-shadow">
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-8 border-b-4 border-black pb-4">Ngapain Aja<br />Duitnya?</h2>
+        <div className="bg-white border-4 border-black p-8 pop-shadow transaction-form-card">
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-8 border-b-4 border-black pb-4 form-heading">Ngapain Aja<br />Duitnya?</h2>
+
+            {/* AI quick input (natural language) */}
+            {!editingTransaction && (
+                <div className="mb-8 bg-yellow-50 border-4 border-black p-3 pop-shadow-sm ai-quick-card">
+                    <label className="flex items-center gap-2 font-black uppercase tracking-widest text-sm bg-black text-white inline-flex px-3 py-1">
+                        <Sparkles size={14} strokeWidth={3} /> Input Cepat (AI)
+                    </label>
+                    <div className="flex gap-2 mt-2">
+                        <input
+                            type="text"
+                            value={nlText}
+                            onChange={(e) => setNlText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleNlParse(); } }}
+                            placeholder="Cth: kopi 15rb di asrama"
+                            disabled={nlLoading}
+                            className="flex-1 min-w-0 bg-white border-4 border-black p-3 font-bold focus:outline-none focus:bg-yellow-100 transition-colors disabled:opacity-60 ai-quick-input"
+                        />
+                        <button
+                            type="button"
+                            onClick={handleNlParse}
+                            disabled={nlLoading || !nlText.trim()}
+                            title="Isi otomatis dengan AI"
+                            className="shrink-0 bg-black text-white font-black uppercase px-4 border-4 border-black hover:bg-yellow-400 hover:text-black transition-colors disabled:opacity-50 flex items-center justify-center ai-quick-action"
+                        >
+                            {nlLoading ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} strokeWidth={2.5} />}
+                        </button>
+                    </div>
+
+                    {/* Auto-save toggle */}
+                    <button
+                        type="button"
+                        onClick={toggleAutoSave}
+                        className={`mt-2 flex items-center gap-2 px-3 py-1.5 border-3 border-black font-black uppercase tracking-wider text-[11px] transition-all ${nlAutoSave ? 'bg-green-400 text-black pop-shadow-sm' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                        title="Kalau ON, transaksi langsung disimpan tanpa konfirmasi"
+                    >
+                        Simpan Otomatis
+                        <span className={`w-8 h-4 border-2 border-black relative inline-block transition-all ${nlAutoSave ? 'bg-green-600' : 'bg-gray-300'}`}>
+                            <span className={`absolute top-0 w-3 h-3 bg-white border-2 border-black transition-all ${nlAutoSave ? 'left-4' : 'left-0'}`} />
+                        </span>
+                    </button>
+
+                    {nlOk
+                        ? <p className="text-xs font-bold text-green-600 mt-2">{nlOk}</p>
+                        : nlError
+                            ? <p className="text-xs font-bold text-red-500 mt-2">{nlError}</p>
+                            : <p className="text-[11px] font-bold text-gray-400 mt-2">{nlAutoSave ? 'Mode simpan otomatis ON — transaksi langsung dicatat tanpa konfirmasi.' : 'Ketik transaksi pakai bahasa biasa, form keisi otomatis untuk kamu cek.'}</p>}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
 

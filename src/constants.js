@@ -162,11 +162,65 @@ export const defaultPutriIncomeCategories = {
     }
 };
 
+// Default expense categories for Logistik wallet
+export const defaultLogistikCategories = {
+    "Pengiriman & Ongkir": {
+        icon: "Truck",
+        color: "bg-amber-400",
+        subCategories: ["Ongkos Kirim", "Ekspedisi", "Kurir"]
+    },
+    "Bahan Habis Pakai": {
+        icon: "Package",
+        color: "bg-orange-400",
+        subCategories: ["ATK", "Tinta & Kertas", "Plastik & Kardus"]
+    },
+    "Peralatan": {
+        icon: "Wrench",
+        color: "bg-blue-400",
+        subCategories: ["Alat Tulis", "Alat Kebersihan", "Elektronik"]
+    },
+    "Cetak & Dokumentasi": {
+        icon: "Printer",
+        color: "bg-indigo-400",
+        subCategories: ["Fotokopi", "Cetak Banner", "Cetak Dokumen"]
+    },
+    "Konsumsi": {
+        icon: "Coffee",
+        color: "bg-rose-400",
+        subCategories: ["Makan Rapat", "Snack Acara", "Minuman"]
+    },
+    "Lain-lain": {
+        icon: "Box",
+        color: "bg-gray-400",
+        subCategories: ["Keperluan Mendadak", "Lainnya"]
+    }
+};
+
+// Default income categories for Logistik wallet
+export const defaultLogistikIncomeCategories = {
+    "Dana Operasional": {
+        icon: "Landmark",
+        color: "bg-amber-400",
+        subCategories: ["Dana Bulanan", "Dana Khusus"]
+    },
+    "Reimburse": {
+        icon: "ReceiptText",
+        color: "bg-green-400",
+        subCategories: ["Reimburse Belanja", "Reimburse Transport"]
+    },
+    "Lain-lain Masuk": {
+        icon: "Wallet",
+        color: "bg-gray-400",
+        subCategories: ["Transfer Masuk", "Lainnya"]
+    }
+};
+
 // Wallet definitions
 export const WALLETS = {
     pribadi: { id: "pribadi", label: "Pribadi", icon: "Wallet", color: "bg-yellow-400" },
     asrama: { id: "asrama", label: "Asrama", icon: "Home", color: "bg-indigo-400" },
     putri: { id: "putri", label: "Asrama Putri", icon: "Home", color: "bg-rose-400" },
+    logistik: { id: "logistik", label: "Logistik", icon: "Truck", color: "bg-amber-400" },
 };
 
 // Role definitions based on email
@@ -189,6 +243,8 @@ export const ROLE_CONFIG = {
             accentText: "text-yellow-400",
             accentHover: "hover:bg-yellow-400",
             headerBg: "bg-yellow-400",
+            statusBarColor: "#facc15", // matches headerBg so the phone status bar blends in
+
             marqueeText: "AWAS KANKER (KANTONG KERING)",
             marqueeBg: "bg-red-500",
             loadingText: "Memeriksa Bos...",
@@ -200,7 +256,7 @@ export const ROLE_CONFIG = {
     putri: {
         emails: ["bqputri2023@gmail.com", "patrabq.group@gmail.com"],
         wallets: ["putri"],
-        label: "Putri",
+        label: "Asrama Putri",
         transactionCollection: "putriTransactions",
         settingsPrefix: "putri",
         cashMatchCollection: "putriCashMatches",
@@ -213,12 +269,40 @@ export const ROLE_CONFIG = {
             accentText: "text-rose-400",
             accentHover: "hover:bg-rose-400",
             headerBg: "bg-rose-400",
+            statusBarColor: "#fb7185",
+
             marqueeText: "JANGAN BOROS YA UKHTI ♡",
             marqueeBg: "bg-pink-500",
             loadingText: "Sebentar ya...",
             loadingText2: "Menyiapkan Data...",
             loginSubtitle: "Khusus Pengurus Putri.",
             sectionTitle: "Catatan Keuangan",
+        }
+    },
+    logistik: {
+        emails: ["gondho45@gmail.com", "patrabq.group@gmail.com"],
+        wallets: ["logistik"],
+        label: "Logistik",
+        transactionCollection: "logistikTransactions",
+        settingsPrefix: "logistik",
+        cashMatchCollection: "logistikCashMatches",
+        debtCollection: "logistikDebts",
+        theme: {
+            bgPage: "bg-amber-50",
+            bgPageColor: "#fffbeb",
+            dotColor: "#f59e0b",
+            accentPrimary: "bg-amber-400",
+            accentText: "text-amber-400",
+            accentHover: "hover:bg-amber-400",
+            headerBg: "bg-amber-500",
+            statusBarColor: "#f59e0b",
+
+            marqueeText: "LOGISTIK — CATAT SEMUA PENGELUARAN OPERASIONAL",
+            marqueeBg: "bg-amber-700",
+            loadingText: "Memuat Logistik...",
+            loadingText2: "Menyiapkan Data...",
+            loginSubtitle: "Khusus Bidang Logistik.",
+            sectionTitle: "Catatan Logistik",
         }
     },
     pengurus: {
@@ -233,6 +317,8 @@ export const ROLE_CONFIG = {
             accentText: "text-emerald-500",
             accentHover: "hover:bg-emerald-500",
             headerBg: "bg-emerald-500",
+            statusBarColor: "#10b981",
+
             marqueeText: "DASHBOARD PENGURUS — BAITUL QOWWAM",
             marqueeBg: "bg-emerald-700",
             loadingText: "Memverifikasi Akses...",
@@ -246,14 +332,24 @@ export const ROLE_CONFIG = {
 // Admin email for pengurus approval
 export const ADMIN_EMAIL = 'baitulqowwam2011@gmail.com';
 
-// Helper: get role from email
-export function getRoleFromEmail(email) {
-    if (!email) return null;
+// Helper: get ALL roles for an email (for multi-role users)
+export function getRolesFromEmail(email) {
+    if (!email) return [];
+    const roles = [];
     for (const [role, config] of Object.entries(ROLE_CONFIG)) {
-        if (config.emails && config.emails.includes(email)) return role;
+        if (role === 'pengurus') continue; // pengurus is fallback, skip
+        if (config.emails && config.emails.includes(email)) roles.push(role);
     }
-    // Any unrecognized email is treated as pengurus (needs approval)
-    return 'pengurus';
+    if (roles.length === 0) roles.push('pengurus');
+    return roles;
+}
+
+// Helper: get role from email (returns first match, or override if provided)
+export function getRoleFromEmail(email, selectedRole) {
+    if (!email) return null;
+    const roles = getRolesFromEmail(email);
+    if (selectedRole && roles.includes(selectedRole)) return selectedRole;
+    return roles[0] || 'pengurus';
 }
 
 // Helper: get all allowed emails

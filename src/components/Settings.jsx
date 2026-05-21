@@ -317,24 +317,24 @@ const Settings = ({
             )}
 
             {/* Tab: Pengeluaran vs Pemasukan */}
-            <div className="flex gap-4 mb-8">
+            <div className="flex gap-2 md:gap-4 mb-8">
                 <button
                     onClick={() => handleSwitchTab('expense')}
-                    className={`flex-1 py-4 border-4 border-black font-black uppercase tracking-widest text-lg transition-all flex items-center justify-center gap-3 ${activeTab === 'expense' ? 'bg-red-500 text-white pop-shadow scale-105 z-10' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    className={`flex-1 min-w-0 py-3 md:py-4 border-4 border-black font-black uppercase tracking-wider md:tracking-widest text-xs md:text-lg transition-all flex items-center justify-center gap-2 md:gap-3 ${activeTab === 'expense' ? 'bg-red-500 text-white pop-shadow scale-105 z-10' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                 >
-                    <span className={`p-2 border-4 ${activeTab === 'expense' ? 'border-black bg-white text-red-500' : 'border-gray-300 bg-white text-gray-400'}`}>
-                        <Icons.TrendingDown size={24} strokeWidth={3} />
+                    <span className={`p-1 md:p-2 border-2 md:border-4 shrink-0 ${activeTab === 'expense' ? 'border-black bg-white text-red-500' : 'border-gray-300 bg-white text-gray-400'}`}>
+                        <Icons.TrendingDown className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
                     </span>
-                    Pengeluaran
+                    <span className="truncate">Pengeluaran</span>
                 </button>
                 <button
                     onClick={() => handleSwitchTab('income')}
-                    className={`flex-1 py-4 border-4 border-black font-black uppercase tracking-widest text-lg transition-all flex items-center justify-center gap-3 ${activeTab === 'income' ? 'bg-green-400 text-black pop-shadow scale-105 z-10' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
+                    className={`flex-1 min-w-0 py-3 md:py-4 border-4 border-black font-black uppercase tracking-wider md:tracking-widest text-xs md:text-lg transition-all flex items-center justify-center gap-2 md:gap-3 ${activeTab === 'income' ? 'bg-green-400 text-black pop-shadow scale-105 z-10' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}
                 >
-                    <span className={`p-2 border-4 ${activeTab === 'income' ? 'border-black bg-white text-green-600' : 'border-gray-300 bg-white text-gray-400'}`}>
-                        <Icons.TrendingUp size={24} strokeWidth={3} />
+                    <span className={`p-1 md:p-2 border-2 md:border-4 shrink-0 ${activeTab === 'income' ? 'border-black bg-white text-green-600' : 'border-gray-300 bg-white text-gray-400'}`}>
+                        <Icons.TrendingUp className="w-4 h-4 md:w-6 md:h-6" strokeWidth={3} />
                     </span>
-                    Pemasukan
+                    <span className="truncate">Pemasukan</span>
                 </button>
             </div>
 

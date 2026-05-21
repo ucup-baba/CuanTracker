@@ -15,12 +15,12 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
     const heroColor = activeWallet === 'asrama' ? 'bg-indigo-500' : activeWallet === 'pribadi' ? 'bg-blue-500' : 'bg-blue-500';
 
     return (
-        <div className="grid grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16">
+        <div className="grid grid-cols-3 gap-4 md:gap-8 mb-8 md:mb-16 balance-grid">
             {/* Saldo Utama */}
-            <div className={`col-span-3 ${heroColor} border-4 border-black p-6 md:p-12 pop-shadow relative overflow-hidden`}>
+            <div className={`col-span-3 ${heroColor} border-4 border-black p-6 md:p-12 pop-shadow relative overflow-hidden balance-card balance-card-main`}>
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
-                        <h2 className="text-xl md:text-2xl font-bold uppercase tracking-widest bg-white inline-block px-4 py-2 border-2 border-black mb-4 pop-shadow-sm">
+                        <h2 className="text-xl md:text-2xl font-bold uppercase tracking-widest bg-white inline-block px-4 py-2 border-2 border-black mb-4 pop-shadow-sm balance-label">
                             Sisa Amunisi — {walletLabel}
                         </h2>
                         <p className={`text-5xl md:text-7xl font-black uppercase tracking-tighter ${totalBalance < 0 ? 'text-red-300' : 'text-white'} border-text drop-shadow-[4px_4px_0_rgba(0,0,0,1)]`}>
@@ -38,7 +38,7 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
             {/* Total Pemasukan */}
             <div
                 onClick={() => onToggleSummary?.('income')}
-                className={`bg-green-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 ${activeSummary === 'income' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100' : 'pop-shadow'}`}
+                className={`bg-green-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 summary-card summary-income ${activeSummary === 'income' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100 is-active' : 'pop-shadow'}`}
             >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-white px-2 md:px-3 py-1 border-2 border-black inline-block">Masuk</h3>
@@ -53,7 +53,7 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
             {/* Total Pengeluaran */}
             <div
                 onClick={() => onToggleSummary?.('expense')}
-                className={`bg-red-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 ${activeSummary === 'expense' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100' : 'pop-shadow'}`}
+                className={`bg-red-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 summary-card summary-expense ${activeSummary === 'expense' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100 is-active' : 'pop-shadow'}`}
             >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-black text-white px-2 md:px-3 py-1 border-2 border-transparent inline-block">Keluar</h3>
@@ -68,7 +68,7 @@ const BalanceCards = ({ totalBalance, totalIncome, totalExpense, totalTransfer, 
             {/* Total Transfer */}
             <div
                 onClick={() => onToggleSummary?.('transfer')}
-                className={`bg-purple-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 ${activeSummary === 'transfer' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100' : 'pop-shadow'}`}
+                className={`bg-purple-400 border-4 border-black p-4 flex flex-col justify-between cursor-pointer transition-transform hover:-translate-y-2 summary-card summary-transfer ${activeSummary === 'transfer' ? 'pop-shadow-sm ring-4 ring-black ring-offset-4 ring-offset-pink-100 is-active' : 'pop-shadow'}`}
             >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2">
                     <h3 className="font-black uppercase tracking-widest text-[10px] md:text-lg bg-white px-2 md:px-3 py-1 border-2 border-black inline-block">Transfer</h3>

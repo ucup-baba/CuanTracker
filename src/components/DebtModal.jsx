@@ -152,7 +152,7 @@ export default function DebtModal({ isOpen, onClose, addTransaction, debts = [] 
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-[#f4f4f0] w-full max-w-2xl rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#f4f4f0] dark:bg-[#1e1e28] w-full max-w-2xl rounded-2xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_0px_rgba(110,110,130,0.45)] overflow-hidden flex flex-col max-h-[90vh]">
                 
                 {/* Header */}
                 <div className="bg-[#bc95d4] p-4 border-b-4 border-black flex justify-between items-center z-10">
@@ -189,7 +189,7 @@ export default function DebtModal({ isOpen, onClose, addTransaction, debts = [] 
                 <div className="p-4 overflow-y-auto flex-1 bg-[url('/grid.svg')]">
                     
                     {/* Summary Card */}
-                    <div className="bg-white p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
+                    <div className="bg-white p-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(110,110,130,0.45)] mb-6">
                         <p className="text-xs sm:text-sm font-black uppercase tracking-widest text-gray-500 mb-1">Total {activeTab === 'utang' ? 'Utang Aktif' : 'Piutang Aktif'}</p>
                         <p className="text-4xl font-black tracking-tighter">{formatRupiah(totalActive)}</p>
                     </div>
@@ -207,7 +207,7 @@ export default function DebtModal({ isOpen, onClose, addTransaction, debts = [] 
 
                     {/* Add Form */}
                     {showAddForm && (
-                        <div className="bg-white p-5 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6 relative">
+                        <div className="bg-white p-5 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(110,110,130,0.45)] mb-6 relative">
                             <button 
                                 onClick={() => setShowAddForm(false)}
                                 className="absolute -top-3 -right-3 bg-red-400 text-white p-1 rounded-full border-2 border-black"
@@ -277,7 +277,7 @@ export default function DebtModal({ isOpen, onClose, addTransaction, debts = [] 
                     {!showAddForm && (
                         <div className="space-y-4">
                             {filteredDebts.length === 0 ? (
-                                <div className="text-center py-12 bg-white/50 rounded-2xl border-4 border-dashed border-black/20">
+                                <div className="text-center py-12 bg-white/50 dark:bg-white/5 rounded-2xl border-4 border-dashed border-black/20 dark:border-white/10">
                                     <p className="font-black uppercase tracking-widest text-gray-400">Belum ada catatan {activeTab} aktif.</p>
                                 </div>
                             ) : (
@@ -285,7 +285,7 @@ export default function DebtModal({ isOpen, onClose, addTransaction, debts = [] 
                                     const progress = ((debt.amount - debt.remaining) / debt.amount) * 100;
                                     
                                     return (
-                                        <div key={debt.id} className="bg-white p-4 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative transition-transform hover:-translate-y-1">
+                                        <div key={debt.id} className="bg-white p-4 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:shadow-[4px_4px_0px_0px_rgba(110,110,130,0.45)] relative transition-transform hover:-translate-y-1">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <h4 className="font-black text-lg flex items-center gap-2">

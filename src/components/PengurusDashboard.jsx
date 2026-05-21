@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart3, TrendingUp, TrendingDown, ArrowRightLeft, Calendar, Search, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { db, collection, onSnapshot, query, orderBy } from '../firebase';
-import { defaultAsramaCategories, defaultAsramaIncomeCategories, defaultPutriCategories, defaultPutriIncomeCategories } from '../constants';
+import { defaultAsramaCategories, defaultAsramaIncomeCategories, defaultPutriCategories, defaultPutriIncomeCategories, defaultLogistikCategories, defaultLogistikIncomeCategories } from '../constants';
 import { CategoryIcon } from './CategoryIcon';
 import CategorySummary from './CategorySummary';
 import PengurusMonthlyComparison from './PengurusMonthlyComparison';
@@ -9,10 +9,11 @@ import PengurusMonthlyComparison from './PengurusMonthlyComparison';
 // Helper to format currency
 const formatRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
 
-export default function PengurusDashboard({ isAdmin, showComparison, onCloseComparison }) {
-    const [activeTab, setActiveTab] = useState('putra'); // 'putra' | 'putri'
+export default function PengurusDashboard({ isAdmin, showComparison, onCloseComparison, getCategoriesForWallet }) {
+    const [activeTab, setActiveTab] = useState('putra'); // 'putra' | 'putri' | 'logistik'
     const [putraTransactions, setPutraTransactions] = useState([]);
     const [putriTransactions, setPutriTransactions] = useState([]);
+    const [logistikTransactions, setLogistikTransactions] = useState([]);
     const [dateFilter, setDateFilter] = useState('month');
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedTx, setExpandedTx] = useState(null);
@@ -48,6 +49,21 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
         return () => unsub();
     }, []);
 
+    // Fetch Logistik transactions
+    useEffect(() => {
+        const q = query(collection(db, 'logistikTransactions'), orderBy('date', 'desc'));
+        const unsub = onSnapshot(q, (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            data.sort((a, b) => {
+                const dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+            setLogistikTransactions(data);
+        });
+        return () => unsub();
+    }, []);
+
     // Filter only asrama transactions for putra
     const putraAsrama = useMemo(() => putraTransactions.filter(t => {
         if (t.type === 'transfer') {
@@ -56,12 +72,22 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
         return t.wallet === 'asrama';
     }), [putraTransactions]);
 
-    const currentTransactions = activeTab === 'putra' ? putraAsrama : putriTransactions;
+    const currentTransactions = activeTab === 'putra' ? putraAsrama : activeTab === 'putri' ? putriTransactions : logistikTransactions;
 
-    const categories = activeTab === 'putra' ? defaultAsramaCategories : defaultPutriCategories;
-    const incomeCategories = activeTab === 'putra' ? defaultAsramaIncomeCategories : defaultPutriIncomeCategories;
-
-    const getCatForType = (type) => type === 'income' ? incomeCategories : categories;
+    const getCatForType = (type) => {
+        const wallet = activeTab === 'putra' ? 'asrama' : activeTab === 'putri' ? 'putri' : 'logistik';
+        if (getCategoriesForWallet) {
+            const cats = getCategoriesForWallet(wallet, type);
+            if (cats && Object.keys(cats).length > 0) return cats;
+        }
+        
+        if (activeTab === 'logistik') {
+            return type === 'income' ? defaultLogistikIncomeCategories : defaultLogistikCategories;
+        }
+        const categories = activeTab === 'putra' ? defaultAsramaCategories : defaultPutriCategories;
+        const incomeCategories = activeTab === 'putra' ? defaultAsramaIncomeCategories : defaultPutriIncomeCategories;
+        return type === 'income' ? incomeCategories : categories;
+    };
 
     // Apply date + search filters
     const filtered = useMemo(() => {
@@ -92,7 +118,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
         let income = 0, expense = 0;
         filtered.forEach(t => {
             if (t.type === 'transfer') {
-                const currentWallet = activeTab === 'putra' ? 'asrama' : 'putri';
+                const currentWallet = activeTab === 'putra' ? 'asrama' : activeTab === 'putri' ? 'putri' : 'logistik';
                 if (t.fromWallet === currentWallet) expense += t.amount;
                 else if (t.toWallet === currentWallet) income += t.amount;
             } else if (t.type === 'income') income += t.amount;
@@ -103,7 +129,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
 
     // Combined totals
     const combinedTotals = useMemo(() => {
-        let pIncome = 0, pExpense = 0, uIncome = 0, uExpense = 0;
+        let pIncome = 0, pExpense = 0, uIncome = 0, uExpense = 0, lIncome = 0, lExpense = 0;
         
         putraAsrama.forEach(t => {
             if (t.type === 'transfer') {
@@ -120,23 +146,34 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
             } else if (t.type === 'income') uIncome += t.amount;
             else if (t.type === 'expense') uExpense += t.amount;
         });
+
+        logistikTransactions.forEach(t => {
+            if (t.type === 'transfer') {
+                if (t.fromWallet === 'logistik') lExpense += t.amount;
+                else if (t.toWallet === 'logistik') lIncome += t.amount;
+            } else if (t.type === 'income') lIncome += t.amount;
+            else if (t.type === 'expense') lExpense += t.amount;
+        });
         
         return {
             putraIncome: pIncome, putraExpense: pExpense, putraBalance: pIncome - pExpense,
             putriIncome: uIncome, putriExpense: uExpense, putriBalance: uIncome - uExpense,
-            totalBalance: (pIncome - pExpense) + (uIncome - uExpense)
+            logistikIncome: lIncome, logistikExpense: lExpense, logistikBalance: lIncome - lExpense,
+            totalBalance: (pIncome - pExpense) + (uIncome - uExpense) + (lIncome - lExpense)
         };
-    }, [putraAsrama, putriTransactions]);
+    }, [putraAsrama, putriTransactions, logistikTransactions]);
 
-    const tabColor = activeTab === 'putra' ? 'indigo' : 'rose';
-    const tabBg = activeTab === 'putra' ? 'bg-indigo-500' : 'bg-rose-500';
+    const tabColor = activeTab === 'putra' ? 'indigo' : activeTab === 'putri' ? 'rose' : 'amber';
+    const tabBg = activeTab === 'putra' ? 'bg-indigo-500' : activeTab === 'putri' ? 'bg-rose-500' : 'bg-amber-500';
 
     if (showComparison) {
         return (
             <PengurusMonthlyComparison
                 putraTransactions={putraAsrama}
                 putriTransactions={putriTransactions}
+                logistikTransactions={logistikTransactions}
                 onClose={onCloseComparison}
+                getCategoriesForWallet={getCategoriesForWallet}
             />
         );
     }
@@ -144,7 +181,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
     return (
         <main className="container mx-auto px-4 sm:px-6 mt-8 pb-20">
             {/* Combined Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white border-4 border-slate-800 p-5 pop-shadow-sm">
                     <p className="font-black uppercase tracking-widest text-xs text-slate-500 mb-1">Total Saldo Gabungan</p>
                     <p className={`text-2xl sm:text-3xl font-black ${combinedTotals.totalBalance >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -166,20 +203,33 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
                     </p>
                 </div>
             </div>
+            <div className="bg-white border-4 border-slate-800 p-5 pop-shadow-sm">
+                <p className="font-black uppercase tracking-widest text-xs text-amber-500 mb-1">Saldo Logistik</p>
+                <p className="text-xl sm:text-2xl font-black">{formatRp(combinedTotals.logistikBalance)}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                    <span className="text-emerald-600">+{formatRp(combinedTotals.logistikIncome)}</span> / <span className="text-red-500">-{formatRp(combinedTotals.logistikExpense)}</span>
+                </p>
+            </div>
 
             {/* Tab Switcher */}
             <div className="flex gap-0 mb-6">
                 <button
                     onClick={() => { setActiveTab('putra'); setActiveSummary(null); }}
-                    className={`flex-1 py-3 font-black uppercase tracking-widest text-sm border-4 border-slate-800 border-r-2 transition-all ${activeTab === 'putra' ? 'bg-indigo-500 text-white pop-shadow-sm' : 'bg-white text-slate-400 hover:bg-slate-50'}`}
+                    className={`flex-1 py-3 font-black uppercase tracking-widest text-xs sm:text-sm border-4 border-slate-800 border-r-2 transition-all ${activeTab === 'putra' ? 'bg-indigo-500 text-white pop-shadow-sm' : 'bg-white text-slate-400 hover:bg-slate-50'}`}
                 >
-                    🏠 Asrama Putra
+                    🏠 Putra
                 </button>
                 <button
                     onClick={() => { setActiveTab('putri'); setActiveSummary(null); }}
-                    className={`flex-1 py-3 font-black uppercase tracking-widest text-sm border-4 border-slate-800 border-l-2 transition-all ${activeTab === 'putri' ? 'bg-rose-500 text-white pop-shadow-sm' : 'bg-white text-slate-400 hover:bg-slate-50'}`}
+                    className={`flex-1 py-3 font-black uppercase tracking-widest text-xs sm:text-sm border-4 border-slate-800 border-x-2 transition-all ${activeTab === 'putri' ? 'bg-rose-500 text-white pop-shadow-sm' : 'bg-white text-slate-400 hover:bg-slate-50'}`}
                 >
-                    🏠 Asrama Putri
+                    🏠 Putri
+                </button>
+                <button
+                    onClick={() => { setActiveTab('logistik'); setActiveSummary(null); }}
+                    className={`flex-1 py-3 font-black uppercase tracking-widest text-xs sm:text-sm border-4 border-slate-800 border-l-2 transition-all ${activeTab === 'logistik' ? 'bg-amber-500 text-white pop-shadow-sm' : 'bg-white text-slate-400 hover:bg-slate-50'}`}
+                >
+                    🚛 Logistik
                 </button>
             </div>
 
@@ -220,8 +270,8 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
                     transactions={filtered}
                     type={activeSummary}
                     categories={getCatForType(activeSummary)}
-                    activeWallet={activeTab === 'putra' ? 'asrama' : 'putri'}
-                    getCategoriesForWallet={(w, t) => getCatForType(t)}
+                    activeWallet={activeTab === 'putra' ? 'asrama' : activeTab === 'putri' ? 'putri' : 'logistik'}
+                    getCategoriesForWallet={getCategoriesForWallet}
                     onClose={() => setActiveSummary(null)}
                 />
             )}
@@ -256,7 +306,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
                 <div className={`${tabBg} px-4 py-3 border-b-4 border-slate-800`}>
                     <h3 className="font-black uppercase tracking-widest text-sm text-white flex items-center gap-2">
                         <Calendar size={16} strokeWidth={3} />
-                        Riwayat Transaksi — {activeTab === 'putra' ? 'Asrama Putra' : 'Asrama Putri'}
+                        Riwayat Transaksi — {activeTab === 'putra' ? 'Asrama Putra' : activeTab === 'putri' ? 'Asrama Putri' : 'Logistik'}
                         <span className="ml-auto bg-white text-slate-800 px-2 py-0.5 text-xs font-black">{filtered.length}</span>
                     </h3>
                 </div>
@@ -293,7 +343,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
                                         {/* Amount */}
                                         <div className="text-right shrink-0">
                                             {(() => {
-                                                const cw = activeTab === 'putra' ? 'asrama' : 'putri';
+                                                const cw = activeTab === 'putra' ? 'asrama' : activeTab === 'putri' ? 'putri' : 'logistik';
                                                 const isValIncome = t.type === 'income' || (t.type === 'transfer' && t.toWallet === cw);
                                                 const isValExpense = t.type === 'expense' || (t.type === 'transfer' && t.fromWallet === cw);
                                                 const sign = isValIncome ? '+' : (isValExpense ? '-' : '');

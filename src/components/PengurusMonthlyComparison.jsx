@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { formatRupiah } from '../utils';
 import {
     ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
@@ -8,15 +8,65 @@ import { CategoryIcon, getCategoryColor } from './CategoryIcon';
 import {
     defaultAsramaCategories, defaultAsramaIncomeCategories,
     defaultPutriCategories, defaultPutriIncomeCategories,
+    defaultLogistikCategories, defaultLogistikIncomeCategories,
     WALLETS
 } from '../constants';
+import { db, collection, onSnapshot, query, orderBy } from '../firebase';
 
 const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
-const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClose }) => {
+const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransactions: propPutri, logistikTransactions: propLogistik, onClose, getCategoriesForWallet, isFullPage }) => {
+    // Self-fetch transactions when used as standalone full-page
+    const [localPutra, setLocalPutra] = useState([]);
+    const [localPutri, setLocalPutri] = useState([]);
+    const [localLogistik, setLocalLogistik] = useState([]);
+
+    useEffect(() => {
+        if (propPutra && propPutri) return; // Skip if provided via props
+        const unsubs = [];
+        unsubs.push(onSnapshot(query(collection(db, 'globalTransactions'), orderBy('date', 'desc')), (snap) => {
+            const allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Filter to asrama-only (exclude pribadi), same as PengurusDashboard
+            const asramaOnly = allData.filter(t => {
+                if (t.type === 'transfer') {
+                    return t.fromWallet === 'asrama' || t.toWallet === 'asrama';
+                }
+                return t.wallet === 'asrama';
+            });
+            asramaOnly.sort((a, b) => {
+                const dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+            setLocalPutra(asramaOnly);
+        }));
+        unsubs.push(onSnapshot(query(collection(db, 'putriTransactions'), orderBy('date', 'desc')), (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            data.sort((a, b) => {
+                const dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+            setLocalPutri(data);
+        }));
+        unsubs.push(onSnapshot(query(collection(db, 'logistikTransactions'), orderBy('date', 'desc')), (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            data.sort((a, b) => {
+                const dateDiff = new Date(b.date) - new Date(a.date);
+                if (dateDiff !== 0) return dateDiff;
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
+            setLocalLogistik(data);
+        }));
+        return () => unsubs.forEach(u => u());
+    }, [propPutra, propPutri, propLogistik]);
+
+    const putraTransactions = propPutra || localPutra;
+    const putriTransactions = propPutri || localPutri;
+    const logistikTransactions = propLogistik || localLogistik;
     const now = new Date();
     const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
     const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -37,6 +87,9 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
         if (sourceFilter === 'both' || sourceFilter === 'putri') {
             targetTxs = [...targetTxs, ...putriTransactions.map(t => ({ ...t, source: 'putri' }))];
         }
+        if (sourceFilter === 'both' || sourceFilter === 'logistik') {
+            targetTxs = [...targetTxs, ...logistikTransactions.map(t => ({ ...t, source: 'logistik' }))];
+        }
 
         const filterByMonth = (txs, month, year) => {
             return txs.filter(t => {
@@ -54,8 +107,8 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
         const calcTotals = (txs) => {
             let income = 0, expense = 0;
             // Also detail by source for proportion display
-            let putraIncome = 0, putriIncome = 0;
-            let putraExpense = 0, putriExpense = 0;
+            let putraIncome = 0, putriIncome = 0, logistikIncome = 0;
+            let putraExpense = 0, putriExpense = 0, logistikExpense = 0;
 
             txs.forEach(t => {
                 let effType = t.type;
@@ -66,18 +119,25 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
                     } else if (t.source === 'putri') {
                         if (t.fromWallet === 'putri') effType = 'expense';
                         else if (t.toWallet === 'putri') effType = 'income';
+                    } else if (t.source === 'logistik') {
+                        if (t.fromWallet === 'logistik') effType = 'expense';
+                        else if (t.toWallet === 'logistik') effType = 'income';
                     }
                 }
 
                 if (effType === 'income') {
                     income += t.amount;
-                    if (t.source === 'putra') putraIncome += t.amount; else putriIncome += t.amount;
+                    if (t.source === 'putra') putraIncome += t.amount; 
+                    else if (t.source === 'putri') putriIncome += t.amount;
+                    else if (t.source === 'logistik') logistikIncome += t.amount;
                 } else if (effType === 'expense') {
                     expense += t.amount;
-                    if (t.source === 'putra') putraExpense += t.amount; else putriExpense += t.amount;
+                    if (t.source === 'putra') putraExpense += t.amount; 
+                    else if (t.source === 'putri') putriExpense += t.amount;
+                    else if (t.source === 'logistik') logistikExpense += t.amount;
                 }
             });
-            return { income, expense, balance: income - expense, putraIncome, putriIncome, putraExpense, putriExpense };
+            return { income, expense, balance: income - expense, putraIncome, putriIncome, logistikIncome, putraExpense, putriExpense, logistikExpense };
         };
 
         const current = calcTotals(currentMonthTxs);
@@ -96,6 +156,9 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
                     } else if (t.source === 'putri') {
                         if (t.fromWallet === 'putri') effType = 'expense';
                         else if (t.toWallet === 'putri') effType = 'income';
+                    } else if (t.source === 'logistik') {
+                        if (t.fromWallet === 'logistik') effType = 'expense';
+                        else if (t.toWallet === 'logistik') effType = 'income';
                     }
                 }
 
@@ -154,7 +217,7 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
             expenseChange: percentChange(current.expense, prev.expense),
             prevMonthName: MONTH_NAMES[prevMonth],
         };
-    }, [putraTransactions, putriTransactions, selectedMonth, selectedYear, sourceFilter]);
+    }, [putraTransactions, putriTransactions, logistikTransactions, selectedMonth, selectedYear, sourceFilter]);
 
     const goToPrevMonth = () => {
         if (selectedMonth === 0) {
@@ -185,12 +248,22 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
     };
 
     const getCatData = (catName, type) => {
-        // Fallback checks from both putra and putri constant categories
+        if (getCategoriesForWallet) {
+            // Check asrama, putri, and logistik wallets
+            const putraCats = getCategoriesForWallet('asrama', type);
+            if (putraCats && putraCats[catName]) return putraCats[catName];
+            const putriCats = getCategoriesForWallet('putri', type);
+            if (putriCats && putriCats[catName]) return putriCats[catName];
+            const logistikCats = getCategoriesForWallet('logistik', type);
+            if (logistikCats && logistikCats[catName]) return logistikCats[catName];
+        }
+
+        // Fallback checks from all constant categories
         let cat = null;
         if (type === 'income') {
-            cat = defaultAsramaIncomeCategories[catName] || defaultPutriIncomeCategories[catName];
+            cat = defaultAsramaIncomeCategories[catName] || defaultPutriIncomeCategories[catName] || defaultLogistikIncomeCategories[catName];
         } else {
-            cat = defaultAsramaCategories[catName] || defaultPutriCategories[catName];
+            cat = defaultAsramaCategories[catName] || defaultPutriCategories[catName] || defaultLogistikCategories[catName];
         }
         return cat || null;
     };
@@ -353,22 +426,37 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
     };
 
     return (
-        <div className="min-h-full bg-pink-100 flex flex-col pt-[72px]" style={{ backgroundImage: 'radial-gradient(#00000010 1px, transparent 1px)', backgroundSize: '12px 12px' }}>
-            {/* Header (Full Page Override) */}
-            <div className="fixed top-0 left-0 w-full bg-black text-white z-50 h-[72px] flex items-center px-4 justify-between pop-shadow">
-                <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="p-2 bg-white text-black border-2 border-black pop-shadow-sm hover:translate-y-[2px] hover:shadow-none transition-all">
-                        <ArrowLeft size={20} strokeWidth={3} />
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <BarChart3 size={24} strokeWidth={3} className="text-yellow-400" />
-                        <div>
-                            <h2 className="font-black uppercase text-base tracking-wider leading-none">Statistik</h2>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Dashboard Pengurus</p>
+        <div className={`min-h-full bg-pink-100 flex flex-col ${!isFullPage ? 'pt-[72px]' : ''}`} style={{ backgroundImage: 'radial-gradient(#00000010 1px, transparent 1px)', backgroundSize: '12px 12px' }}>
+            {/* Header (only when used as overlay/modal, not as full page route) */}
+            {!isFullPage && (
+                <div className="fixed top-0 left-0 w-full bg-black text-white z-50 h-[72px] flex items-center px-4 justify-between pop-shadow">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onClose} className="p-2 bg-white text-black border-2 border-black pop-shadow-sm hover:translate-y-[2px] hover:shadow-none transition-all">
+                            <ArrowLeft size={20} strokeWidth={3} />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <BarChart3 size={24} strokeWidth={3} className="text-yellow-400" />
+                            <div>
+                                <h2 className="font-black uppercase text-base tracking-wider leading-none">Statistik</h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Dashboard Pengurus</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+            {/* Title for full page mode */}
+            {isFullPage && (
+                <div className="flex items-center gap-3 mb-4 px-1">
+                    <div className="bg-indigo-400 p-3 border-4 border-black pop-shadow-sm">
+                        <BarChart3 size={24} strokeWidth={3} className="text-white" />
+                    </div>
+                    <div>
+                        <h2 className="font-black uppercase text-2xl tracking-tighter leading-none">Laporan Bulanan</h2>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Perbandingan Keuangan Asrama</p>
+                    </div>
+                </div>
+            )}
 
             {/* Filter Ribbons */}
             <div className="bg-white border-b-4 border-black shrink-0 px-4 py-3 flex flex-col sm:flex-row gap-3">
@@ -377,7 +465,8 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
                     {[
                         { id: 'both', label: 'Gabungan' },
                         { id: 'putra', label: 'Kas Putra' },
-                        { id: 'putri', label: 'Kas Putri' }
+                        { id: 'putri', label: 'Kas Putri' },
+                        { id: 'logistik', label: 'Kas Logistik' }
                     ].map(f => (
                         <button
                             key={f.id}
@@ -454,6 +543,14 @@ const PengurusMonthlyComparison = ({ putraTransactions, putriTransactions, onClo
                                     >
                                         <span className="text-[10px] font-black text-black px-1 truncate drop-shadow-md">
                                             Putri {(((monthData.current.putriIncome + monthData.current.putriExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
+                                        </span>
+                                    </div>
+                                    <div
+                                        className="bg-amber-400 h-full transition-all duration-700 flex items-center justify-center border-l-2 border-black"
+                                        style={{ width: `${((monthData.current.logistikIncome + monthData.current.logistikExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100}%` }}
+                                    >
+                                        <span className="text-[10px] font-black text-black px-1 truncate drop-shadow-md">
+                                            Logistik {(((monthData.current.logistikIncome + monthData.current.logistikExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
                                         </span>
                                     </div>
                                 </div>

@@ -17,6 +17,13 @@ service cloud.firestore {
               request.auth.token.email == "patrabq.group@gmail.com");
     }
 
+    // Email Logistik (access to logistik collections only)
+    function isLogistik() {
+      return request.auth != null && 
+             (request.auth.token.email == "gondho45@gmail.com" ||
+              request.auth.token.email == "patrabq.group@gmail.com");
+    }
+
     // Admin Pengurus (full control of pengurus features)
     function isAdmin() {
       return request.auth != null && 
@@ -45,9 +52,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
     }
 
-    // Pengaturan kategori global (Putra only)
+    // Pengaturan kategori global (Putra read/write, Pengurus read-only)
     match /globalSettings/{document=**} {
       allow read, write: if isPutra();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
     }
 
     // Riwayat opname kas global (Putra read/write, Pengurus read-only)
@@ -70,9 +79,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
     }
 
-    // Pengaturan kategori putri (Putri only)
+    // Pengaturan kategori putri (Putri read/write, Pengurus read-only)
     match /putriSettings/{document=**} {
       allow read, write: if isPutri();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
     }
 
     // Riwayat opname kas putri (Putri read/write, Pengurus read-only)
@@ -84,6 +95,33 @@ service cloud.firestore {
     // Utang/piutang putri (Putri only)
     match /putriDebts/{document=**} {
       allow read, write: if isPutri();
+    }
+
+    // === LOGISTIK COLLECTIONS ===
+
+    // Transaksi logistik (Logistik read/write, Pengurus read-only)
+    match /logistikTransactions/{document=**} {
+      allow read, write: if isLogistik();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
+    }
+
+    // Pengaturan kategori logistik (Logistik read/write, Pengurus read-only)
+    match /logistikSettings/{document=**} {
+      allow read, write: if isLogistik();
+      allow read: if isAdmin();
+      allow read: if isAuthenticated();
+    }
+
+    // Riwayat opname kas logistik (Logistik read/write, Pengurus read-only)
+    match /logistikCashMatches/{document=**} {
+      allow read, write: if isLogistik();
+      allow read: if isAdmin();
+    }
+
+    // Utang/piutang logistik (Logistik only)
+    match /logistikDebts/{document=**} {
+      allow read, write: if isLogistik();
     }
   }
 }

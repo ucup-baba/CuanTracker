@@ -207,3 +207,151 @@ exports.testReport = functions
             res.status(500).json({ success: false, error: error.message });
         }
     });
+
+// =====================================================================
+// AI ASSISTANT (Gemini proxy)
+// Single callable that proxies to the Gemini API. The API key lives only
+// on the server as the secret GEMINI_KEY (never shipped to the browser).
+// Two modes:
+//   - "parse": free text -> structured transaction JSON
+//   - "chat" : finance question + client-built aggregate summary -> answer
+// Node 20 runtime provides a global fetch().
+// =====================================================================
+const GEMINI_MODEL = 'gemini-3.5-flash';
+
+// Pull the answer text out of Gemini's response (skip thought-only parts).
+function extractGeminiText(json) {
+    const parts = json?.candidates?.[0]?.content?.parts || [];
+    return parts.map(p => p && p.text).filter(Boolean).join('').trim();
+}
+
+async function callGemini({ systemText, contents, jsonOut }) {
+    const key = process.env.GEMINI_KEY;
+    if (!key) {
+        throw new functions.https.HttpsError('failed-precondition', 'GEMINI_KEY belum di-set di server.');
+    }
+    const body = {
+        contents,
+        generationConfig: {
+            temperature: jsonOut ? 0 : 0.7,
+            maxOutputTokens: 2048,
+        },
+    };
+    if (systemText) body.systemInstruction = { parts: [{ text: systemText }] };
+    if (jsonOut) body.generationConfig.responseMimeType = 'application/json';
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+    let resp;
+    try {
+        resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+    } catch (err) {
+        throw new functions.https.HttpsError('unavailable', 'Gagal menghubungi Gemini: ' + err.message);
+    }
+    if (!resp.ok) {
+        const t = await resp.text().catch(() => '');
+        console.error('Gemini error', resp.status, t.slice(0, 500));
+        throw new functions.https.HttpsError('internal', `Gemini error ${resp.status}`);
+    }
+    const data = await resp.json();
+    return extractGeminiText(data);
+}
+
+function buildParsePrompt(payload) {
+    const { text, wallets = [], categories = {}, defaultWallet = 'pribadi', today } = payload;
+    return [
+        `Tanggal hari ini: ${today}.`,
+        `Dompet tersedia: ${wallets.join(', ') || defaultWallet}.`,
+        `Kategori per dompet & tipe (JSON): ${JSON.stringify(categories)}.`,
+        '',
+        'Ubah kalimat transaksi berikut menjadi SATU objek JSON.',
+        `Kalimat: "${text}"`,
+        '',
+        'Aturan:',
+        '- "type": "expense" (default) | "income" | "transfer".',
+        `- "wallet": salah satu dari dompet tersedia (default "${defaultWallet}").`,
+        '- "amount": integer Rupiah tanpa titik. "15rb"/"15k"=15000, "2jt"=2000000.',
+        '- "category" & "subCategory": WAJIB dipilih dari daftar kategori untuk wallet+type tsb. Pilih paling cocok; jika ragu pakai kategori "Lain-lain"/"Lain-lain Masuk" bila ada.',
+        '- "text": keterangan singkat (judul) dari kalimat, huruf kapital wajar.',
+        '- Untuk transfer, "category" & "subCategory" = null.',
+        'Keluarkan HANYA JSON valid, tanpa penjelasan.',
+    ].join('\n');
+}
+
+exports.aiAssistant = functions
+    .region('asia-southeast2')
+    .runWith({ secrets: ['GEMINI_KEY'] })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError('unauthenticated', 'Harus login dulu.');
+        }
+        const { mode, payload = {} } = data || {};
+
+        if (mode === 'parse') {
+            if (!payload.text || !payload.text.trim()) {
+                throw new functions.https.HttpsError('invalid-argument', 'Teks transaksi kosong.');
+            }
+            const prompt = buildParsePrompt(payload);
+            const out = await callGemini({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                jsonOut: true,
+            });
+            let parsed;
+            try {
+                parsed = JSON.parse(out);
+            } catch (e) {
+                throw new functions.https.HttpsError('internal', 'Gagal membaca hasil parse AI.');
+            }
+            return { ok: true, transaction: parsed };
+        }
+
+        if (mode === 'chat') {
+            const { question, summary, history = [], canRecord = false, categories, wallets, defaultWallet } = payload;
+            if (!question || !question.trim()) {
+                throw new functions.https.HttpsError('invalid-argument', 'Pertanyaan kosong.');
+            }
+            const lines = [
+                'Kamu "Asisten Cuan", asisten keuangan di aplikasi CuanTracker.',
+                'Bahasa Indonesia, santai tapi jelas. Mata uang Rupiah (Rp).',
+                'Jawab RINGKAS dan actionable: beri insight + rekomendasi praktis (budgeting, pola pengeluaran).',
+                'Gunakan HANYA data ringkasan di bawah; JANGAN mengarang angka. Bila data kurang, katakan terus terang.',
+                'Hindari saran investasi berisiko.',
+                '',
+                'RINGKASAN KEUANGAN USER (JSON):',
+                JSON.stringify(summary || {}),
+            ];
+            if (canRecord) {
+                lines.push('');
+                lines.push('MODE CATAT AKTIF: user mengizinkanmu mencatat transaksi ke aplikasi.');
+                lines.push(`Dompet tersedia: ${(wallets || []).join(', ') || defaultWallet}. Default: ${defaultWallet}.`);
+                lines.push(`Kategori valid per dompet & tipe (JSON): ${JSON.stringify(categories || {})}.`);
+                lines.push('Jika DAN HANYA JIKA user jelas ingin MENCATAT/menambah transaksi, isi field "transactions". "category" & "subCategory" WAJIB dipilih dari daftar valid untuk wallet+type tsb. "amount" integer Rupiah ("15rb"=15000, "2jt"=2000000). Jangan mencatat kalau user cuma bertanya/analisis.');
+                lines.push('Balas SELALU JSON valid: {"reply": string, "transactions": [{"type":"expense|income","wallet":string,"amount":integer,"category":string,"subCategory":string,"text":string,"date":"YYYY-MM-DD"}]}. transactions=[] bila tidak mencatat. "reply" = pesan natural buat user (konfirmasi apa yang dicatat / jawaban).');
+            }
+            const systemText = lines.join('\n');
+
+            const contents = [];
+            for (const m of history.slice(-6)) {
+                if (!m || !m.text) continue;
+                contents.push({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: String(m.text) }] });
+            }
+            contents.push({ role: 'user', parts: [{ text: String(question) }] });
+
+            const out = await callGemini({ systemText, contents, jsonOut: !!canRecord });
+            if (canRecord) {
+                let parsed;
+                try { parsed = JSON.parse(out); } catch (e) { parsed = { reply: out, transactions: [] }; }
+                return {
+                    ok: true,
+                    answer: typeof parsed.reply === 'string' ? parsed.reply : '',
+                    transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+                };
+            }
+            return { ok: true, answer: out };
+        }
+
+        throw new functions.https.HttpsError('invalid-argument', 'Mode tidak dikenal.');
+    });

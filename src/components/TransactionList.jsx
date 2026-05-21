@@ -22,7 +22,7 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
     return (
         <div className="space-y-4">
             {/* Search Input */}
-            <div className="relative mb-6">
+            <div className="relative mb-6 transaction-search">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Search size={20} className="font-bold text-black" strokeWidth={3} />
                 </span>
@@ -31,7 +31,7 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="CARI NAMA, KATEGORI, ATAU SUB-KATEGORI..."
-                    className="w-full bg-white border-4 border-black p-4 pl-12 font-black uppercase text-sm md:text-base focus:outline-none focus:bg-yellow-50 pop-shadow-sm transition-colors placeholder:text-gray-300"
+                    className="w-full bg-white border-4 border-black p-4 pl-12 font-black uppercase text-sm md:text-base focus:outline-none focus:bg-yellow-50 pop-shadow-sm transition-colors placeholder:text-gray-300 transaction-search-input"
                 />
             </div>
 
@@ -92,7 +92,7 @@ const TransactionList = ({ transactions, deleteTransaction, getCategoriesForWall
                         return (
                             <div
                                 key={t.id}
-                                className={`group flex justify-between items-center bg-white border-4 border-black p-4 md:p-6 pop-shadow-sm hover:translate-x-2 transition-transform border-l-[12px] ${borderColor}`}
+                                className={`group flex justify-between items-center bg-white border-4 border-black p-4 md:p-6 pop-shadow-sm hover:translate-x-2 transition-transform border-l-[12px] transaction-row ${borderColor}`}
                             >
                                 <div className="flex items-center gap-4 md:gap-6">
                                     {/* Ikon */}

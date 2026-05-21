@@ -4,13 +4,27 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#fef08a" />
+    <meta name="theme-color" content="#facc15" />
     <meta name="description" content="Aplikasi pencatatan keuangan pribadi & asrama bergaya neo-brutalism." />
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.svg">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
     <title>CuanTracker</title>
-  <script type="module" crossorigin src="/assets/index-Cz64oFNd.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-UUYBK2yY.css">
+    <script>
+        // Apply saved theme before paint to avoid a light-mode flash.
+        // (theme-color/status-bar tint is set per role by App.jsx.)
+        (function () {
+            try {
+                if (localStorage.getItem('cuan-theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+                if (localStorage.getItem('cuan-ui-skin') === 'soft') {
+                    document.documentElement.classList.add('ui-soft');
+                }
+            } catch (e) { }
+        })();
+    </script>
+  <script type="module" crossorigin src="/assets/index-C2Wmldy_.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-ComzKa8j.css">
 <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
 
 <body>
