@@ -20,14 +20,15 @@ export function parseAmountId(input) {
     return Math.round(n);
 }
 
-// text -> structured transaction { type, wallet, amount, category, subCategory, text }
+// text -> array of structured transactions [{ type, wallet, amount, category, subCategory, text }, ...]
 export async function parseTransaction({ text, wallets, categories, defaultWallet }) {
     const today = new Date().toISOString().split('T')[0];
     const res = await callAi({
         mode: 'parse',
         payload: { text, wallets, categories, defaultWallet, today },
     });
-    return res.data?.transaction || null;
+    if (Array.isArray(res.data?.transactions)) return res.data.transactions;
+    return res.data?.transaction ? [res.data.transaction] : [];
 }
 
 // finance question + aggregate summary -> { answer, transactions }

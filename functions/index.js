@@ -267,7 +267,7 @@ function buildParsePrompt(payload) {
         `Dompet tersedia: ${wallets.join(', ') || defaultWallet}.`,
         `Kategori per dompet & tipe (JSON): ${JSON.stringify(categories)}.`,
         '',
-        'Ubah kalimat transaksi berikut menjadi SATU objek JSON.',
+        'Ubah kalimat berikut menjadi SATU ATAU LEBIH transaksi (boleh beberapa item beda kategori/dompet, dipisah koma, "dan", atau baris baru). Satu objek per transaksi.',
         `Kalimat: "${text}"`,
         '',
         'Aturan:',
@@ -277,7 +277,7 @@ function buildParsePrompt(payload) {
         '- "category" & "subCategory": WAJIB dipilih dari daftar kategori untuk wallet+type tsb. Pilih paling cocok; jika ragu pakai kategori "Lain-lain"/"Lain-lain Masuk" bila ada.',
         '- "text": keterangan singkat (judul) dari kalimat, huruf kapital wajar.',
         '- Untuk transfer, "category" & "subCategory" = null.',
-        'Keluarkan HANYA JSON valid, tanpa penjelasan.',
+        'Keluarkan HANYA JSON valid berbentuk {"transactions":[ {objek transaksi}, ... ]}, tanpa penjelasan. Kalau cuma satu transaksi, tetap pakai array berisi satu objek.',
     ].join('\n');
 }
 
@@ -305,7 +305,14 @@ exports.aiAssistant = functions
             } catch (e) {
                 throw new functions.https.HttpsError('internal', 'Gagal membaca hasil parse AI.');
             }
-            return { ok: true, transaction: parsed };
+            // Normalize to an array (model may return {transactions:[...]}, a bare
+            // array, or a single object).
+            const list = Array.isArray(parsed)
+                ? parsed
+                : Array.isArray(parsed?.transactions)
+                    ? parsed.transactions
+                    : (parsed ? [parsed] : []);
+            return { ok: true, transactions: list, transaction: list[0] || null };
         }
 
         if (mode === 'chat') {

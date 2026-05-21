@@ -165,32 +165,39 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
         setNlOk('');
         setNlLoading(true);
         try {
-            const tx = await parseTransaction({
+            const list = await parseTransaction({
                 text: q,
                 wallets: availableWallets,
                 categories: buildCategoriesPayload(),
                 defaultWallet: activeWallet !== 'all' ? activeWallet : wallet,
             });
-            if (!tx) {
+            if (!list || !list.length) {
                 setNlError('AI tidak mengembalikan hasil. Coba lagi atau isi manual.');
                 return;
             }
             if (nlAutoSave) {
-                const auto = buildAutoTx(tx, q);
-                if (auto) {
-                    onAddTransaction(auto);
-                    setNlOk(`✅ Tersimpan: ${auto.text} — Rp${auto.amount.toLocaleString('id-ID')}`);
+                // Multi-input: save every valid transaction at once.
+                const saved = [];
+                for (const tx of list) {
+                    const auto = buildAutoTx(tx, q);
+                    if (auto) { onAddTransaction(auto); saved.push(auto); }
+                }
+                if (saved.length) {
+                    const total = saved.reduce((a, s) => a + s.amount, 0);
+                    setNlOk(saved.length === 1
+                        ? `✅ Tersimpan: ${saved[0].text} — Rp${saved[0].amount.toLocaleString('id-ID')}`
+                        : `✅ Tersimpan ${saved.length} transaksi — total Rp${total.toLocaleString('id-ID')}`);
                     setNlText('');
                     scrollToList();
-                    return;
+                } else {
+                    applyParsed(list[0], q);
+                    setNlError('AI kurang yakin (kategori/nominal) — cek & simpan manual ya.');
+                    scrollToReview();
                 }
-                // Not confident -> fall back to manual confirm.
-                applyParsed(tx, q);
-                setNlError('AI kurang yakin (kategori/nominal) — cek & simpan manual ya.');
-                scrollToReview();
                 return;
             }
-            applyParsed(tx, q);
+            // Autosave OFF -> single: prefill the first parsed transaction.
+            applyParsed(list[0], q);
             setNlText('');
             scrollToReview();
         } catch (e) {
@@ -354,15 +361,15 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                         ? <p className="text-xs font-bold text-green-600 mt-2">{nlOk}</p>
                         : nlError
                             ? <p className="text-xs font-bold text-red-500 mt-2">{nlError}</p>
-                            : <p className="text-[11px] font-bold text-gray-400 mt-2">{nlAutoSave ? 'Mode simpan otomatis ON — transaksi langsung dicatat tanpa konfirmasi.' : 'Ketik transaksi pakai bahasa biasa, form keisi otomatis untuk kamu cek.'}</p>}
+                            : <p className="text-[11px] font-bold text-gray-400 mt-2">{nlAutoSave ? 'Simpan otomatis ON — bisa beberapa transaksi sekaligus (pisah koma/baris), langsung dicatat.' : 'Ketik transaksi pakai bahasa biasa, form keisi otomatis untuk kamu cek.'}</p>}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6 manual-entry-form">
 
                 {/* Pilihan Dompet */}
                 {availableWallets.length > 1 && (
-                    <div>
+                    <div className="wallet-field">
                         <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">Dompet</label>
                         <div className="flex gap-4">
                             <button
@@ -388,7 +395,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 )}
 
                 {/* Pilihan Jenis Transaksi */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 type-field">
                     <button
                         type="button"
                         onClick={() => { setType('expense'); resetSelections(); }}
@@ -416,7 +423,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
 
                 {/* Transfer: Pilihan Asal & Tujuan */}
                 {type === 'transfer' && (
-                    <div className="bg-purple-50 border-4 border-black p-4 space-y-3">
+                    <div className="bg-purple-50 border-4 border-black p-4 space-y-3 transfer-field">
                         <label className="block font-black uppercase tracking-widest text-sm bg-purple-500 text-white inline-block px-3 py-1">Arah Transfer</label>
                         <div className="flex items-center gap-3 justify-center">
                             <button
@@ -443,7 +450,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
 
                 {/* Pilihan Kategori (hanya untuk expense/income) */}
                 {type !== 'transfer' && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 category-field">
                         <div>
                             <div className="flex items-center gap-3 mb-2 flex-wrap">
                                 <label className="font-black uppercase tracking-widest text-sm bg-black text-white inline-block px-3 py-1">
@@ -525,7 +532,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 )}
 
                 {/* Input Keterangan */}
-                <div ref={keteranganRef} className="scroll-mt-24">
+                <div ref={keteranganRef} className="scroll-mt-24 detail-field">
                     <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">
                         {type === 'transfer' ? 'Catatan (Opsional)' : 'Keterangan Detail'}
                     </label>
@@ -540,7 +547,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 </div>
 
                 {/* Input Jumlah */}
-                <div>
+                <div className="amount-field">
                     <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">Jumlah (Rp)</label>
                     <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-2xl">Rp</span>
@@ -564,7 +571,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 {/* Tombol Submit */}
                 <button
                     type="submit"
-                    className={`w-full font-black uppercase tracking-widest text-2xl py-6 border-4 border-black transition-colors pop-shadow mt-4 ${type === 'transfer'
+                    className={`w-full font-black uppercase tracking-widest text-2xl py-6 border-4 border-black transition-colors pop-shadow mt-4 submit-field ${type === 'transfer'
                         ? 'bg-purple-500 text-white hover:bg-purple-400'
                         : 'bg-black text-white hover:bg-yellow-400 hover:text-black'
                         }`}

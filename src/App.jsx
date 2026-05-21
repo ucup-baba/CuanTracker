@@ -938,7 +938,7 @@ export default function App() {
                                 </div>
                             )}
 
-                            <main className="container mx-auto px-6 mt-12">
+                            <main className="container mx-auto px-6 mt-12 dashboard-main">
                                 <BalanceCards
                                     totalBalance={totalBalance}
                                     totalIncome={totalIncome}
@@ -959,8 +959,8 @@ export default function App() {
                                     />
                                 )}
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                                    <section>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 dashboard-layout">
+                                    <section className="entry-section">
                                         <TransactionForm
                                             onAddTransaction={addTransaction}
                                             onUpdateTransaction={updateTransaction}
@@ -972,7 +972,7 @@ export default function App() {
                                         />
                                     </section>
 
-                                    <section id="tx-list-section" className="scroll-mt-24">
+                                    <section id="tx-list-section" className="scroll-mt-24 history-section">
                                         <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-6 mt-2 xl:mt-0">
                                             <h2 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter bg-white inline-block px-4 py-2 border-4 border-black pop-shadow-sm rotate-[-2deg] section-heading">
                                                 {theme.sectionTitle}

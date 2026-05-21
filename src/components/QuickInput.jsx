@@ -11,7 +11,7 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [preview, setPreview] = useState(null); // candidate tx awaiting confirm
-    const [saved, setSaved] = useState(null);      // saved tx (success)
+    const [savedList, setSavedList] = useState([]); // saved tx(s) (success)
     const [autoSave, setAutoSave] = useState(() => {
         try { return localStorage.getItem('cuan-nl-autosave') === '1'; } catch { return false; }
     });
@@ -23,7 +23,7 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
     // Reset state whenever the panel is closed.
     useEffect(() => {
         if (!isOpen) {
-            setText(''); setError(''); setPreview(null); setSaved(null); setLoading(false);
+            setText(''); setError(''); setPreview(null); setSavedList([]); setLoading(false);
         }
     }, [isOpen]);
 
@@ -75,7 +75,7 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
 
     const doSave = (tx) => {
         onAddTransaction(tx);
-        setSaved(tx);
+        setSavedList([tx]);
         setPreview(null);
         setText('');
     };
@@ -83,21 +83,33 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
     const handleParse = async () => {
         const q = text.trim();
         if (!q || loading) return;
-        setError(''); setSaved(null); setPreview(null); setLoading(true);
+        setError(''); setSavedList([]); setPreview(null); setLoading(true);
         try {
-            const parsed = await parseTransaction({
+            const list = await parseTransaction({
                 text: q,
                 wallets: availableWallets,
                 categories: buildCategoriesPayload(),
                 defaultWallet: activeWallet && activeWallet !== 'all' ? activeWallet : (availableWallets[0] || 'pribadi'),
             });
-            const tx = buildTx(parsed, q);
-            if (!tx) {
+            if (!list || !list.length) {
                 setError('AI kurang yakin (kategori/nominal). Coba lebih jelas, mis. "kopi 15rb pribadi".');
                 return;
             }
-            if (autoSave) doSave(tx);
-            else setPreview(tx);
+            if (autoSave) {
+                // Multi-input: save every valid transaction at once.
+                const saved = [];
+                for (const p of list) { const tx = buildTx(p, q); if (tx) { onAddTransaction(tx); saved.push(tx); } }
+                if (saved.length) { setSavedList(saved); setText(''); }
+                else setError('AI kurang yakin (kategori/nominal). Coba lebih jelas, mis. "kopi 15rb pribadi".');
+            } else {
+                // Autosave OFF -> single preview (first).
+                const tx = buildTx(list[0], q);
+                if (!tx) {
+                    setError('AI kurang yakin (kategori/nominal). Coba lebih jelas, mis. "kopi 15rb pribadi".');
+                    return;
+                }
+                setPreview(tx);
+            }
         } catch (e) {
             setError('AI gagal: ' + (e?.message || 'error'));
         } finally {
@@ -115,7 +127,7 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
         if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy)) onClose();
     };
 
-    const reset = () => { setSaved(null); setPreview(null); setError(''); setText(''); inputRef.current?.focus(); };
+    const reset = () => { setSavedList([]); setPreview(null); setError(''); setText(''); inputRef.current?.focus(); };
 
     return (
         <div className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center bg-black/50 p-3" onClick={onClose}>
@@ -198,20 +210,26 @@ const QuickInput = ({ isOpen, onClose, getCategoriesForWallet, availableWallets 
                         </div>
                     )}
 
-                    {saved && (
+                    {savedList.length > 0 && (
                         <div className="border-4 border-black bg-green-100 p-3">
-                            <p className="font-black uppercase text-green-700 flex items-center gap-2"><Check size={18} strokeWidth={3} /> Tersimpan!</p>
-                            <p className="text-sm font-bold text-gray-700 mt-1">
-                                {saved.type === 'income' ? '+' : '-'}{formatRupiah(saved.amount)} · {saved.text} ({WALLETS[saved.wallet]?.label || saved.wallet})
+                            <p className="font-black uppercase text-green-700 flex items-center gap-2">
+                                <Check size={18} strokeWidth={3} /> Tersimpan{savedList.length > 1 ? ` ${savedList.length} transaksi` : ''}!
                             </p>
+                            <div className="mt-1 space-y-1">
+                                {savedList.map((s) => (
+                                    <p key={s.id} className="text-sm font-bold text-gray-700">
+                                        {s.type === 'income' ? '+' : '-'}{formatRupiah(s.amount)} · {s.text} ({WALLETS[s.wallet]?.label || s.wallet})
+                                    </p>
+                                ))}
+                            </div>
                             <button onClick={reset} className="mt-3 w-full bg-white text-black font-black uppercase tracking-widest py-2.5 border-4 border-black hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
                                 <Sparkles size={16} strokeWidth={2.5} /> Catat Lagi
                             </button>
                         </div>
                     )}
 
-                    {!preview && !saved && !error && (
-                        <p className="text-[11px] font-bold text-gray-400">Ketik transaksi pakai bahasa biasa. Geser kiri/kanan atau tap ✕ untuk tutup.</p>
+                    {!preview && !savedList.length && !error && (
+                        <p className="text-[11px] font-bold text-gray-400">{autoSave ? 'Simpan otomatis ON — bisa beberapa transaksi sekaligus (pisah koma/baris), langsung tersimpan.' : 'Ketik transaksi pakai bahasa biasa. Geser kiri/kanan atau tap ✕ untuk tutup.'}</p>
                     )}
                 </div>
             </div>
