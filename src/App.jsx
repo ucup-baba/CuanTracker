@@ -22,6 +22,7 @@ import PengurusDashboard from './components/PengurusDashboard';
 import PengurusAccountManager from './components/PengurusAccountManager';
 import PengurusMonthlyComparison from './components/PengurusMonthlyComparison';
 import AiAssistant from './components/AiAssistant';
+import QuickInput from './components/QuickInput';
 import {
     defaultCategories, defaultIncomeCategories,
     defaultAsramaCategories, defaultAsramaIncomeCategories,
@@ -54,6 +55,7 @@ export default function App() {
 
     // Calculator State
     const [showCalculator, setShowCalculator] = useState(false);
+    const [showQuickInput, setShowQuickInput] = useState(false);
     const [showCashMatch, setShowCashMatch] = useState(false);
     const [showComparison, setShowComparison] = useState(false);
     const [showPengurusComparison, setShowPengurusComparison] = useState(false);
@@ -970,7 +972,7 @@ export default function App() {
                                         />
                                     </section>
 
-                                    <section>
+                                    <section id="tx-list-section" className="scroll-mt-24">
                                         <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-6 mt-2 xl:mt-0">
                                             <h2 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter bg-white inline-block px-4 py-2 border-4 border-black pop-shadow-sm rotate-[-2deg] section-heading">
                                                 {theme.sectionTitle}
@@ -1087,6 +1089,8 @@ export default function App() {
             <BottomNav
                 isPengurus={false}
                 theme={theme}
+                onQuickInput={() => setShowQuickInput(true)}
+                onOpenComparison={() => setShowComparison(true)}
             />
 
             {/* AI Assistant (floating, draggable). Putra: personal wallet only. */}
@@ -1100,6 +1104,17 @@ export default function App() {
                 getCategoriesForWallet={getCategoriesForWallet}
                 availableWallets={availableWallets}
                 defaultWallet={effectiveWallet === 'all' ? (availableWallets[0] || 'pribadi') : effectiveWallet}
+            />
+
+            {/* Quick AI input (opened from bottom nav center button) */}
+            <QuickInput
+                isOpen={showQuickInput}
+                onClose={() => setShowQuickInput(false)}
+                getCategoriesForWallet={getCategoriesForWallet}
+                availableWallets={availableWallets}
+                activeWallet={effectiveWallet}
+                onAddTransaction={addTransaction}
+                theme={theme}
             />
         </div>
     );

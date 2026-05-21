@@ -34,9 +34,10 @@ export async function parseTransaction({ text, wallets, categories, defaultWalle
 // When canRecord is true, the model may return transactions to be saved
 // (categories/wallets describe what's valid so it picks correctly).
 export async function financeChat({ question, summary, history, canRecord = false, categories, wallets, defaultWallet }) {
+    const today = new Date().toISOString().split('T')[0];
     const res = await callAi({
         mode: 'chat',
-        payload: { question, summary, history, canRecord, categories, wallets, defaultWallet },
+        payload: { question, summary, history, canRecord, categories, wallets, defaultWallet, today },
     });
     return { answer: res.data?.answer || '', transactions: res.data?.transactions || [] };
 }

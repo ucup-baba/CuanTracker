@@ -309,7 +309,7 @@ exports.aiAssistant = functions
         }
 
         if (mode === 'chat') {
-            const { question, summary, history = [], canRecord = false, categories, wallets, defaultWallet } = payload;
+            const { question, summary, history = [], canRecord = false, categories, wallets, defaultWallet, today } = payload;
             if (!question || !question.trim()) {
                 throw new functions.https.HttpsError('invalid-argument', 'Pertanyaan kosong.');
             }
@@ -328,6 +328,7 @@ exports.aiAssistant = functions
                 lines.push('MODE CATAT AKTIF: user mengizinkanmu mencatat transaksi ke aplikasi.');
                 lines.push(`Dompet tersedia: ${(wallets || []).join(', ') || defaultWallet}. Default: ${defaultWallet}.`);
                 lines.push(`Kategori valid per dompet & tipe (JSON): ${JSON.stringify(categories || {})}.`);
+                lines.push(`Tanggal hari ini: ${today || '(tak diketahui)'}. Untuk "date" PAKAI tanggal hari ini ini, KECUALI user menyebut tanggal lain secara eksplisit (mis. "kemarin", "tanggal 10"). Format "date" WAJIB YYYY-MM-DD.`);
                 lines.push('Jika DAN HANYA JIKA user jelas ingin MENCATAT/menambah transaksi, isi field "transactions". "category" & "subCategory" WAJIB dipilih dari daftar valid untuk wallet+type tsb. "amount" integer Rupiah ("15rb"=15000, "2jt"=2000000). Jangan mencatat kalau user cuma bertanya/analisis.');
                 lines.push('Balas SELALU JSON valid: {"reply": string, "transactions": [{"type":"expense|income","wallet":string,"amount":integer,"category":string,"subCategory":string,"text":string,"date":"YYYY-MM-DD"}]}. transactions=[] bila tidak mencatat. "reply" = pesan natural buat user (konfirmasi apa yang dicatat / jawaban).');
             }

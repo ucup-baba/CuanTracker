@@ -77,7 +77,9 @@ const AiAssistant = ({ transactions = [], userRole, theme, walletFilter = null, 
                 wallet: w,
                 category: tx.category,
                 subCategory: sub,
-                date: tx.date || new Date().toISOString().split('T')[0],
+                // Guard against the model inventing a weird/old date (it would
+                // sink below the visible list yet still move the balance).
+                date: /^\d{4}-\d{2}-\d{2}$/.test(tx.date) ? tx.date : new Date().toISOString().split('T')[0],
             };
             onAddTransaction && onAddTransaction(final);
             saved.push(final);
@@ -142,7 +144,7 @@ const AiAssistant = ({ transactions = [], userRole, theme, walletFilter = null, 
                 const saved = applyRecorded(result.transactions);
                 if (saved.length) {
                     const list = saved
-                        .map((s) => `• ${s.type === 'income' ? 'Masuk' : 'Keluar'}: ${s.text} — Rp${s.amount.toLocaleString('id-ID')} (${s.category}${s.subCategory ? ' › ' + s.subCategory : ''})`)
+                        .map((s) => `• ${s.type === 'income' ? 'Masuk' : 'Keluar'}: ${s.text} — Rp${s.amount.toLocaleString('id-ID')} · ${s.date} · ${s.wallet} (${s.category}${s.subCategory ? ' › ' + s.subCategory : ''})`)
                         .join('\n');
                     setMessages((m) => [...m, { role: 'model', text: `✅ Dicatat ${saved.length} transaksi:\n${list}` }]);
                 }

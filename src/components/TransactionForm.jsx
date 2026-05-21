@@ -38,6 +38,15 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
         return nv;
     });
 
+    // After AI quick-input: jump the user to where they need to look next.
+    const keteranganRef = useRef(null);
+    const scrollToReview = () => {
+        setTimeout(() => keteranganRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+    };
+    const scrollToList = () => {
+        setTimeout(() => document.getElementById('tx-list-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    };
+
     // Update wallet when activeWallet changes
     useEffect(() => {
         if (activeWallet !== 'all' && !editingTransaction) {
@@ -172,15 +181,18 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                     onAddTransaction(auto);
                     setNlOk(`✅ Tersimpan: ${auto.text} — Rp${auto.amount.toLocaleString('id-ID')}`);
                     setNlText('');
+                    scrollToList();
                     return;
                 }
                 // Not confident -> fall back to manual confirm.
                 applyParsed(tx, q);
                 setNlError('AI kurang yakin (kategori/nominal) — cek & simpan manual ya.');
+                scrollToReview();
                 return;
             }
             applyParsed(tx, q);
             setNlText('');
+            scrollToReview();
         } catch (e) {
             // Fallback: at least fill amount + description locally.
             const amt = parseAmountId(q);
@@ -513,7 +525,7 @@ const TransactionForm = ({ onAddTransaction, onUpdateTransaction, getCategoriesF
                 )}
 
                 {/* Input Keterangan */}
-                <div>
+                <div ref={keteranganRef} className="scroll-mt-24">
                     <label className="block font-black uppercase tracking-widest mb-2 text-sm bg-black text-white inline-block px-3 py-1">
                         {type === 'transfer' ? 'Catatan (Opsional)' : 'Keterangan Detail'}
                     </label>
