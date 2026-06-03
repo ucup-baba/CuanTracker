@@ -217,7 +217,7 @@ exports.testReport = functions
 //   - "chat" : finance question + client-built aggregate summary -> answer
 // Node 20 runtime provides a global fetch().
 // =====================================================================
-const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // Pull the answer text out of Gemini's response (skip thought-only parts).
 function extractGeminiText(json) {
@@ -254,7 +254,8 @@ async function callGemini({ systemText, contents, jsonOut }) {
     if (!resp.ok) {
         const t = await resp.text().catch(() => '');
         console.error('Gemini error', resp.status, t.slice(0, 500));
-        throw new functions.https.HttpsError('internal', `Gemini error ${resp.status}`);
+        const code = resp.status >= 500 ? 'unavailable' : 'internal';
+        throw new functions.https.HttpsError(code, `Gemini error ${resp.status}`);
     }
     const data = await resp.json();
     return extractGeminiText(data);

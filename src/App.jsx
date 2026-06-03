@@ -1010,21 +1010,22 @@ export default function App() {
 
             {/* PWA Install Banner */}
             {showInstallBanner && (
-                <div className={`fixed left-0 right-0 bottom-[calc(76px+env(safe-area-inset-bottom))] md:bottom-0 ${theme.accentPrimary} border-t-8 border-black p-4 z-[60] flex items-center justify-between shadow-[0_-4px_0_0_rgba(0,0,0,1)]`}>
-                    <div className="flex-1">
-                        <h3 className="font-black uppercase text-xl text-black">INSTALL CUANTRACKER.</h3>
-                        <p className="font-bold text-black text-sm pr-4 limit-2-lines">Akses lebih cepat & tanpa url bar! Tambahkan ke layar utama.</p>
+                <div className={`fixed left-3 right-3 bottom-[calc(110px+env(safe-area-inset-bottom))] md:left-0 md:right-0 md:bottom-0 ${theme.accentPrimary} border-4 md:border-x-0 md:border-b-0 md:border-t-8 border-black p-3 md:p-4 z-[60] flex items-center justify-between gap-3 shadow-[0_-4px_0_0_rgba(0,0,0,1)]`}>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="font-black uppercase text-base md:text-xl leading-none text-black">INSTALL CUANTRACKER.</h3>
+                        <p className="font-bold text-black text-xs md:text-sm pr-1 md:pr-4 limit-2-lines">Akses lebih cepat & tanpa url bar! Tambahkan ke layar utama.</p>
                     </div>
                     <button
                         onClick={handleInstallClick}
-                        className="bg-black text-white font-black uppercase px-4 py-3 border-4 border-black hover:bg-white hover:text-black transition-colors pop-shadow-sm flex items-center gap-2 shrink-0"
+                        className="bg-black text-white font-black uppercase px-3 py-2 md:px-4 md:py-3 border-4 border-black hover:bg-white hover:text-black transition-colors pop-shadow-sm flex items-center gap-2 shrink-0 text-sm md:text-base"
                     >
                         <Download size={20} strokeWidth={3} />
                         Install
                     </button>
                     <button
                         onClick={() => setShowInstallBanner(false)}
-                        className="absolute -top-4 right-4 bg-white border-4 border-black p-1 hover:bg-gray-100 font-bold"
+                        className="absolute -top-4 -right-2 md:right-4 bg-white border-4 border-black px-1.5 py-0.5 hover:bg-gray-100 font-bold leading-none"
+                        aria-label="Tutup banner install"
                     >
                         X
                     </button>
@@ -1115,6 +1116,7 @@ export default function App() {
                 activeWallet={effectiveWallet}
                 onAddTransaction={addTransaction}
                 theme={theme}
+                showWalletToggle={userRole === 'putra' && availableWallets.length > 1}
             />
         </div>
     );
