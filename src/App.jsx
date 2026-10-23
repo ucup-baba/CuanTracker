@@ -524,7 +524,8 @@ export default function App() {
     };
 
     // 0. Public System Overview / AI Report page (/about, /info, /overview)
-    if (['/about', '/info', '/overview'].includes(location.pathname)) {
+    const cleanPath = (location.pathname || '').replace(/\/+$/, '').toLowerCase();
+    if (['/about', '/info', '/overview'].includes(cleanPath)) {
         return <SystemOverviewPage onBack={() => navigate('/')} initialLang="en" />;
     }
 
