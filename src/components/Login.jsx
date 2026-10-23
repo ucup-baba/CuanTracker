@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
-import { DollarSign, Shield } from 'lucide-react';
+import { DollarSign, Shield, BookOpen } from 'lucide-react';
 import { getAllAllowedEmails, getRoleFromEmail, ROLE_CONFIG } from '../constants';
+import { SystemOverviewDialog } from './SystemOverview';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showOverview, setShowOverview] = useState(false);
 
     const allowedPasswordEmail = "superbq@bqmail.com";
 
@@ -132,8 +134,27 @@ const Login = () => {
                     <Shield size={22} strokeWidth={3} />
                     LOGIN PENGURUS
                 </button>
-                <p className="text-xs text-slate-400 mt-3 text-center font-bold">Login dengan Gmail untuk akses Dashboard Pengurus<br/>Perlu persetujuan admin.</p>
+                <p className="text-xs text-slate-500 mt-3 text-center font-bold">
+                    Login dengan Gmail untuk akses Dashboard Pengurus (Perlu persetujuan admin).<br />
+                    <span className="text-slate-400">Sign in with Google for Supervisory Access (Pending Admin Approval).</span>
+                </p>
+
+                {/* Tombol System Overview & AI Report (EN / ID) */}
+                <button
+                    type="button"
+                    onClick={() => setShowOverview(true)}
+                    className="w-full mt-5 bg-amber-300 text-black font-black uppercase tracking-wider text-xs sm:text-sm py-3 px-4 border-4 border-black hover:bg-amber-400 flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 pop-shadow-sm"
+                >
+                    <BookOpen size={18} strokeWidth={2.5} />
+                    <span>System Overview & AI Report (🇬🇧 EN / 🇮🇩 ID)</span>
+                </button>
             </div>
+
+            <SystemOverviewDialog
+                isOpen={showOverview}
+                onClose={() => setShowOverview(false)}
+                initialLang="en"
+            />
         </div>
     );
 };

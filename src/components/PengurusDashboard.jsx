@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, ArrowRightLeft, Calendar, Search, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, ArrowRightLeft, Calendar, Search, ChevronDown, ChevronUp, Users, BookOpen } from 'lucide-react';
 import { db, collection, onSnapshot, query, orderBy } from '../firebase';
 import { defaultAsramaCategories, defaultAsramaIncomeCategories, defaultPutriCategories, defaultPutriIncomeCategories, defaultLogistikCategories, defaultLogistikIncomeCategories } from '../constants';
 import { CategoryIcon } from './CategoryIcon';
 import CategorySummary from './CategorySummary';
 import PengurusMonthlyComparison from './PengurusMonthlyComparison';
+import { SystemOverviewDialog } from './SystemOverview';
 
 // Helper to format currency
 const formatRp = (n) => 'Rp ' + Number(n || 0).toLocaleString('id-ID');
@@ -18,6 +19,7 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedTx, setExpandedTx] = useState(null);
     const [activeSummary, setActiveSummary] = useState(null);
+    const [showOverview, setShowOverview] = useState(false);
 
     // Fetch Putra transactions
     useEffect(() => {
@@ -180,6 +182,30 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
 
     return (
         <main className="container mx-auto px-4 sm:px-6 mt-8 pb-20">
+            {/* System Overview & AI Report Banner */}
+            <div className="bg-amber-100 border-4 border-slate-800 p-4 mb-6 pop-shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3">
+                    <div className="bg-amber-400 p-2 border-3 border-black shrink-0">
+                        <BookOpen size={20} strokeWidth={2.5} className="text-black" />
+                    </div>
+                    <div>
+                        <p className="font-black uppercase tracking-tight text-xs sm:text-sm text-slate-900">
+                            System Overview & Operational Scope (Baitul Qowwam)
+                        </p>
+                        <p className="text-xs font-bold text-slate-600">
+                            Penjelasan isi sistem, cakupan operasional harian (Putra/Putri/Logistik), keterbatasan, & penggunaan AI.
+                        </p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShowOverview(true)}
+                    className="bg-black text-white font-black uppercase tracking-wider text-xs py-2.5 px-4 border-3 border-black hover:bg-emerald-500 hover:text-black transition-colors pop-shadow-sm shrink-0 self-start sm:self-center"
+                >
+                    📖 Baca Info (🇬🇧 EN / 🇮🇩 ID)
+                </button>
+            </div>
+
             {/* Combined Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white border-4 border-slate-800 p-5 pop-shadow-sm">
@@ -379,6 +405,12 @@ export default function PengurusDashboard({ isAdmin, showComparison, onCloseComp
                     </div>
                 )}
             </div>
+
+            <SystemOverviewDialog
+                isOpen={showOverview}
+                onClose={() => setShowOverview(false)}
+                initialLang="en"
+            />
         </main>
     );
 }

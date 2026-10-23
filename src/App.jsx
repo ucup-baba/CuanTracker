@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { DollarSign, Wallet, Home, Download, Shield, Clock, Ban, Mail, User, LogOut, Users, ChevronRight } from 'lucide-react';
+import { DollarSign, Wallet, Home, Download, Shield, Clock, Ban, Mail, User, LogOut, Users, ChevronRight, BookOpen } from 'lucide-react';
 import Marquee from './components/Marquee';
 import Header from './components/Header';
 import BalanceCards from './components/BalanceCards';
@@ -21,6 +21,7 @@ import BottomNav from './components/BottomNav';
 import PengurusDashboard from './components/PengurusDashboard';
 import PengurusAccountManager from './components/PengurusAccountManager';
 import PengurusMonthlyComparison from './components/PengurusMonthlyComparison';
+import SystemOverviewPage, { SystemOverviewDialog } from './components/SystemOverview';
 import AiAssistant from './components/AiAssistant';
 import QuickInput from './components/QuickInput';
 import {
@@ -70,6 +71,7 @@ export default function App() {
     const [pengurusStatus, setPengurusStatus] = useState(null); // null | 'loading' | 'pending' | 'approved' | 'blocked'
     const [showAccountManager, setShowAccountManager] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
+    const [showSystemOverview, setShowSystemOverview] = useState(false);
 
     // Unsaved settings tracking
     const [isSettingsDirty, setIsSettingsDirty] = useState(false);
@@ -521,6 +523,11 @@ export default function App() {
         backgroundColor: isSoftSkin ? '#fffaf0' : isDark ? '#14141b' : theme.bgPageColor
     };
 
+    // 0. Public System Overview / AI Report page (/about, /info, /overview)
+    if (['/about', '/info', '/overview'].includes(location.pathname)) {
+        return <SystemOverviewPage onBack={() => navigate('/')} initialLang="en" />;
+    }
+
     // 1. Loading auth
     if (loadingAuth) {
         return (
@@ -624,13 +631,27 @@ export default function App() {
                                 <div className="bg-amber-400 p-4 border-4 border-black mb-6 rotate-[-3deg]">
                                     <Clock size={48} strokeWidth={3} className="text-black" />
                                 </div>
-                                <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">Menunggu Persetujuan</h2>
-                                <p className="text-sm text-slate-500 font-bold mb-6">Permintaan akses Anda sedang ditinjau oleh admin. Silakan tunggu persetujuan.</p>
-                                <div className="bg-amber-50 border-2 border-amber-300 p-3 w-full mb-6">
+                                <h2 className="text-2xl font-black uppercase tracking-tighter mb-1">Menunggu Persetujuan</h2>
+                                <p className="text-xs font-black uppercase tracking-wider text-amber-600 mb-3">Pending Admin Approval</p>
+                                <p className="text-sm text-slate-600 font-bold mb-2">
+                                    Permintaan akses Anda sedang ditinjau oleh admin. Silakan tunggu persetujuan untuk melihat Dashboard Pengurus.
+                                </p>
+                                <p className="text-xs text-slate-500 font-bold mb-5">
+                                    Your access request is under review by the Foundation Administrator. While waiting, you can read the full system overview & AI implementation report below.
+                                </p>
+                                <div className="bg-amber-50 border-2 border-amber-300 p-3 w-full mb-4">
                                     <p className="text-xs text-amber-700 font-bold">📧 {user.email}</p>
                                 </div>
-                                <button onClick={handleLogout} className="bg-black text-white font-black uppercase tracking-widest text-sm py-3 px-6 border-4 border-black hover:bg-red-500 transition-colors pop-shadow-sm">
-                                    Keluar
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSystemOverview(true)}
+                                    className="w-full mb-3 bg-emerald-400 text-black font-black uppercase tracking-wider text-xs py-3 px-4 border-4 border-black hover:bg-emerald-500 transition-colors pop-shadow-sm flex items-center justify-center gap-2"
+                                >
+                                    <BookOpen size={16} strokeWidth={2.5} />
+                                    <span>System Overview & AI Report (🇬🇧 EN / 🇮🇩 ID)</span>
+                                </button>
+                                <button onClick={handleLogout} className="w-full bg-black text-white font-black uppercase tracking-widest text-sm py-3 px-6 border-4 border-black hover:bg-red-500 transition-colors pop-shadow-sm">
+                                    Keluar / Sign Out
                                 </button>
                             </>
                         )}
@@ -650,6 +671,11 @@ export default function App() {
                             </>
                         )}
                     </div>
+                    <SystemOverviewDialog
+                        isOpen={showSystemOverview}
+                        onClose={() => setShowSystemOverview(false)}
+                        initialLang="en"
+                    />
                 </div>
             );
         }
