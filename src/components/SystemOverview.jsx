@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Shield, Sparkles, AlertTriangle, CheckCircle2, XCircle, Clock, BookOpen, Globe, ArrowLeft, X, Home, Truck, Lock } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 const CONTENT = {
     en: {
@@ -347,7 +348,7 @@ export function SystemOverviewContent({ lang, setLang, onClose }) {
  * Modal dialog wrapper using native <dialog closedby="any"> with light-dismiss fallback.
  */
 export function SystemOverviewDialog({ isOpen, onClose, initialLang = 'en' }) {
-    const [lang, setLang] = useState(initialLang);
+    const [lang, setLang] = useLanguage(initialLang);
     const dialogRef = useRef(null);
 
     useEffect(() => {
@@ -414,7 +415,7 @@ export function SystemOverviewDialog({ isOpen, onClose, initialLang = 'en' }) {
  * Standalone full-page route component (/about or /info)
  */
 export default function SystemOverviewPage({ onBack, initialLang = 'en' }) {
-    const [lang, setLang] = useState(initialLang);
+    const [lang, setLang] = useLanguage(initialLang);
 
     return (
         <div

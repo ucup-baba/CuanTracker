@@ -3,8 +3,11 @@ import { formatRupiah } from '../utils';
 import { X, PieChart, ChevronDown, ChevronUp, FileText, ArrowRightLeft } from 'lucide-react';
 import { CategoryIcon, getCategoryColor } from './CategoryIcon';
 import { WALLETS } from '../constants';
+import { useLanguage, translateLabel } from '../i18n';
 
 const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, activeWallet }) => {
+    const [lang] = useLanguage('id');
+    const isEn = lang === 'en';
     const [expandedCategories, setExpandedCategories] = useState({});
     const [expandedSubs, setExpandedSubs] = useState({});
 
@@ -119,7 +122,11 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
     }, [transactions, type]);
 
     const isTransfer = type === 'transfer';
-    const title = isTransfer ? 'Ringkasan Transfer' : type === 'income' ? 'Ringkasan Pemasukan' : 'Ringkasan Pengeluaran';
+    const title = isTransfer
+        ? (isEn ? 'Transfer Summary' : 'Ringkasan Transfer')
+        : type === 'income'
+        ? (isEn ? 'Income Summary' : 'Ringkasan Pemasukan')
+        : (isEn ? 'Expense Summary' : 'Ringkasan Pengeluaran');
     const bgClass = isTransfer ? 'bg-purple-100' : type === 'income' ? 'bg-green-100' : 'bg-red-100';
     const barClass = isTransfer ? 'bg-purple-500' : type === 'income' ? 'bg-green-500' : 'bg-red-500';
     const subBarClass = isTransfer ? 'bg-purple-300' : type === 'income' ? 'bg-green-300' : 'bg-red-300';
@@ -178,9 +185,13 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                         {isTransfer ? <ArrowRightLeft size={40} strokeWidth={2} /> : <PieChart size={40} strokeWidth={2} />}
                     </div>
                     <div>
-                        <h3 className="font-black uppercase text-xl text-black">Data Masih Kosong</h3>
+                        <h3 className="font-black uppercase text-xl text-black">
+                            {isEn ? 'No Data Yet' : 'Data Masih Kosong'}
+                        </h3>
                         <p className="font-bold text-gray-400 mt-1">
-                            Belum ada {isTransfer ? 'transfer' : type === 'income' ? 'pemasukan' : 'pengeluaran'} yang bisa dianalisis.
+                            {isEn
+                                ? `No ${isTransfer ? 'transfer' : type === 'income' ? 'income' : 'expense'} records to analyze yet.`
+                                : `Belum ada ${isTransfer ? 'transfer' : type === 'income' ? 'pemasukan' : 'pengeluaran'} yang bisa dianalisis.`}
                         </p>
                     </div>
                 </div>
@@ -281,6 +292,7 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                         const isExpanded = expandedCategories[item.category] || false;
                         const colorClass = catData ? getCategoryColor(catData.color) : (type === 'income' ? 'bg-green-400' : 'bg-gray-400');
                         const iconName = catData?.icon || (type === 'income' ? 'TrendingUp' : 'Package');
+                        const catDisplay = translateLabel(item.category, lang);
 
                         return (
                             <div key={item.category} className="bg-white border-4 border-black overflow-hidden pop-shadow-sm">
@@ -296,7 +308,7 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start gap-2">
                                             <span className="font-black uppercase tracking-widest text-sm md:text-base truncate">
-                                                {item.category}
+                                                {catDisplay}
                                             </span>
                                             <div className="text-right shrink-0">
                                                 <span className={`font-black text-lg md:text-xl tracking-tighter ${amountColor}`}>
@@ -314,10 +326,10 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
 
                                         <div className="flex justify-between mt-1">
                                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                                                {item.percent.toFixed(1)}% dari total
+                                                {item.percent.toFixed(1)}% {isEn ? 'of total' : 'dari total'}
                                             </span>
                                             <span className="text-xs font-bold text-gray-400">
-                                                {item.subCategories.length} sub-kategori
+                                                {item.subCategories.length} {isEn ? 'sub-categories' : 'sub-kategori'}
                                             </span>
                                         </div>
                                     </div>
@@ -333,6 +345,7 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                                         {item.subCategories.map((sub, subIndex) => {
                                             const subKey = `${item.category}::${sub.name}`;
                                             const isSubExpanded = expandedSubs[subKey] || false;
+                                            const subDisplay = translateLabel(sub.name, lang);
 
                                             return (
                                                 <div
@@ -348,7 +361,7 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex justify-between items-center gap-2">
                                                                 <span className="font-bold uppercase tracking-widest text-xs md:text-sm truncate text-gray-700">
-                                                                    {sub.name}
+                                                                    {subDisplay}
                                                                 </span>
                                                                 <div className="flex items-center gap-2 shrink-0">
                                                                     <span className="text-[10px] font-bold text-gray-400 bg-white border border-gray-300 px-1.5 py-0.5">
@@ -368,7 +381,7 @@ const CategorySummary = ({ transactions, type, onClose, getCategoriesForWallet, 
                                                             </div>
 
                                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 block">
-                                                                {sub.percent.toFixed(1)}% dari {item.category}
+                                                                {sub.percent.toFixed(1)}% {isEn ? 'of' : 'dari'} {catDisplay}
                                                             </span>
                                                         </div>
 

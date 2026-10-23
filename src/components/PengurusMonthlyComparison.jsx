@@ -12,13 +12,22 @@ import {
     WALLETS
 } from '../constants';
 import { db, collection, onSnapshot, query, orderBy } from '../firebase';
+import { useLanguage, translateLabel, LanguageToggle } from '../i18n';
 
 const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
+const MONTH_NAMES_EN = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransactions: propPutri, logistikTransactions: propLogistik, onClose, getCategoriesForWallet, isFullPage }) => {
+    const [lang, setLang] = useLanguage('id');
+    const isEn = lang === 'en';
+    const monthNames = isEn ? MONTH_NAMES_EN : MONTH_NAMES;
     // Self-fetch transactions when used as standalone full-page
     const [localPutra, setLocalPutra] = useState([]);
     const [localPutri, setLocalPutri] = useState([]);
@@ -215,9 +224,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
             expenseBreakdown,
             incomeChange: percentChange(current.income, prev.income),
             expenseChange: percentChange(current.expense, prev.expense),
-            prevMonthName: MONTH_NAMES[prevMonth],
+            prevMonthName: monthNames[prevMonth],
         };
-    }, [putraTransactions, putriTransactions, logistikTransactions, selectedMonth, selectedYear, sourceFilter]);
+    }, [putraTransactions, putriTransactions, logistikTransactions, selectedMonth, selectedYear, sourceFilter, monthNames]);
 
     const goToPrevMonth = () => {
         if (selectedMonth === 0) {
@@ -272,7 +281,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
         if (Math.abs(change) < 0.01) {
             return (
                 <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 border border-gray-300 px-2 py-0.5">
-                    <Minus size={10} strokeWidth={3} /> Sama
+                    <Minus size={10} strokeWidth={3} /> {isEn ? 'Same' : 'Sama'}
                 </span>
             );
         }
@@ -294,7 +303,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
             return (
                 <div className="bg-white border-2 border-dashed border-gray-300 p-6 text-center">
                     <p className="font-bold text-gray-400 text-sm">
-                        Belum ada {type === 'income' ? 'pemasukan' : 'pengeluaran'} sesuai filter di bulan ini.
+                        {isEn
+                            ? `No ${type === 'income' ? 'income' : 'expenses'} matching the filter this month.`
+                            : `Belum ada ${type === 'income' ? 'pemasukan' : 'pengeluaran'} sesuai filter di bulan ini.`}
                     </p>
                 </div>
             );
@@ -308,6 +319,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                     const isExpanded = expandedCategories[catKey] || false;
                     const colorClass = catData ? getCategoryColor(catData.color) : (type === 'income' ? 'bg-green-400' : 'bg-gray-400');
                     const iconName = catData?.icon || (type === 'income' ? 'TrendingUp' : 'Package');
+                    const catDisplay = translateLabel(item.category, lang);
 
                     return (
                         <div key={catKey} className="bg-white border-3 border-black overflow-hidden">
@@ -321,7 +333,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start gap-1">
                                         <span className="font-black uppercase tracking-widest text-[11px] truncate">
-                                            {item.category}
+                                            {catDisplay}
                                         </span>
                                         <span className={`font-black text-sm tracking-tighter shrink-0 ${amountColor}`}>
                                             {formatRupiah(item.amount)}
@@ -352,6 +364,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                     {item.subCategories.map((sub, subIndex) => {
                                         const subKey = `${catKey}::${sub.name}`;
                                         const isSubExpanded = expandedSubs[subKey] || false;
+                                        const subDisplay = translateLabel(sub.name, lang);
 
                                         return (
                                             <div key={sub.name} className={`${subIndex < item.subCategories.length - 1 ? 'border-b-2 border-dashed border-gray-300' : ''}`}>
@@ -363,7 +376,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex justify-between items-center gap-1">
                                                             <span className="font-bold uppercase tracking-widest text-[10px] truncate text-gray-700">
-                                                                {sub.name}
+                                                                {subDisplay}
                                                             </span>
                                                             <div className="flex items-center gap-1.5 shrink-0">
                                                                 <span className="text-[9px] font-bold text-gray-400 bg-white border border-gray-300 px-1 py-0.5">
@@ -403,7 +416,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                                                         {tx.text || '-'}
                                                                     </span>
                                                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 block">
-                                                                        {tx.date} • {tx.source === 'putra' ? 'Putra' : 'Putri'}
+                                                                        {tx.date} • {tx.source === 'putra' ? (isEn ? 'Boys (Putra)' : 'Putra') : tx.source === 'putri' ? (isEn ? 'Girls (Putri)' : 'Putri') : (isEn ? 'Logistics' : 'Logistik')}
                                                                     </span>
                                                                 </div>
                                                                 <span className={`font-black text-[11px] tracking-tight shrink-0 flex items-center ${amountColor}`}>
@@ -437,24 +450,36 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                         <div className="flex items-center gap-2">
                             <BarChart3 size={24} strokeWidth={3} className="text-yellow-400" />
                             <div>
-                                <h2 className="font-black uppercase text-base tracking-wider leading-none">Statistik</h2>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Dashboard Pengurus</p>
+                                <h2 className="font-black uppercase text-base tracking-wider leading-none">
+                                    {isEn ? 'Statistics' : 'Statistik'}
+                                </h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+                                    {isEn ? 'Supervisory Dashboard' : 'Dashboard Pengurus'}
+                                </p>
                             </div>
                         </div>
                     </div>
+                    <LanguageToggle lang={lang} setLang={setLang} />
                 </div>
             )}
 
             {/* Title for full page mode */}
             {isFullPage && (
-                <div className="flex items-center gap-3 mb-4 px-1">
-                    <div className="bg-indigo-400 p-3 border-4 border-black pop-shadow-sm">
-                        <BarChart3 size={24} strokeWidth={3} className="text-white" />
+                <div className="flex items-center justify-between gap-3 mb-4 px-1">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-indigo-400 p-3 border-4 border-black pop-shadow-sm">
+                            <BarChart3 size={24} strokeWidth={3} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="font-black uppercase text-2xl tracking-tighter leading-none">
+                                {isEn ? 'Monthly Report' : 'Laporan Bulanan'}
+                            </h2>
+                            <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">
+                                {isEn ? 'Dormitory Financial Comparison' : 'Perbandingan Keuangan Asrama'}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="font-black uppercase text-2xl tracking-tighter leading-none">Laporan Bulanan</h2>
-                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-1">Perbandingan Keuangan Asrama</p>
-                    </div>
+                    <LanguageToggle lang={lang} setLang={setLang} />
                 </div>
             )}
 
@@ -463,10 +488,10 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                 {/* Source Filter */}
                 <div className="flex flex-1 border-3 border-black p-1 bg-gray-100 pop-shadow-sm rounded-sm">
                     {[
-                        { id: 'both', label: 'Gabungan' },
-                        { id: 'putra', label: 'Kas Putra' },
-                        { id: 'putri', label: 'Kas Putri' },
-                        { id: 'logistik', label: 'Kas Logistik' }
+                        { id: 'both', label: isEn ? 'Combined' : 'Gabungan' },
+                        { id: 'putra', label: isEn ? 'Boys (Putra)' : 'Kas Putra' },
+                        { id: 'putri', label: isEn ? 'Girls (Putri)' : 'Kas Putri' },
+                        { id: 'logistik', label: isEn ? 'Logistics' : 'Kas Logistik' }
                     ].map(f => (
                         <button
                             key={f.id}
@@ -480,9 +505,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                 {/* Type Filter */}
                 <div className="flex flex-1 border-3 border-black p-1 bg-gray-100 pop-shadow-sm rounded-sm">
                     {[
-                        { id: 'both', label: 'Semua Status' },
-                        { id: 'income', label: 'Pemasukan' },
-                        { id: 'expense', label: 'Pengeluaran' }
+                        { id: 'both', label: isEn ? 'All Types' : 'Semua Status' },
+                        { id: 'income', label: isEn ? 'Income' : 'Pemasukan' },
+                        { id: 'expense', label: isEn ? 'Expense' : 'Pengeluaran' }
                     ].map(f => (
                         <button
                             key={f.id}
@@ -506,7 +531,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                 <div className="flex items-center gap-2 bg-white px-4 py-1.5 border-3 border-black pop-shadow-sm">
                     <Calendar size={18} strokeWidth={2.5} />
                     <span className="font-black uppercase tracking-widest text-sm text-black">
-                        {MONTH_NAMES[selectedMonth]} {selectedYear}
+                        {monthNames[selectedMonth]} {selectedYear}
                     </span>
                 </div>
                 <button
@@ -524,7 +549,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                 {sourceFilter === 'both' && (
                     <div className="bg-white border-3 border-black p-4 pop-shadow-sm">
                         <span className="font-black uppercase tracking-widest text-[10px] text-gray-500 block mb-3 text-center">
-                            Proporsi Sumber Kas (% Total Putaran Uang)
+                            {isEn ? 'Fund Source Proportion (% Total Cash Flow)' : 'Proporsi Sumber Kas (% Total Putaran Uang)'}
                         </span>
                         {(monthData.current.income + monthData.current.expense) > 0 ? (
                             <>
@@ -534,7 +559,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                         style={{ width: `${((monthData.current.putraIncome + monthData.current.putraExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100}%` }}
                                     >
                                         <span className="text-[10px] font-black text-black px-1 truncate drop-shadow-md">
-                                            Putra {(((monthData.current.putraIncome + monthData.current.putraExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
+                                            {isEn ? 'Boys' : 'Putra'} {(((monthData.current.putraIncome + monthData.current.putraExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
                                         </span>
                                     </div>
                                     <div
@@ -542,7 +567,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                         style={{ width: `${((monthData.current.putriIncome + monthData.current.putriExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100}%` }}
                                     >
                                         <span className="text-[10px] font-black text-black px-1 truncate drop-shadow-md">
-                                            Putri {(((monthData.current.putriIncome + monthData.current.putriExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
+                                            {isEn ? 'Girls' : 'Putri'} {(((monthData.current.putriIncome + monthData.current.putriExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
                                         </span>
                                     </div>
                                     <div
@@ -550,14 +575,16 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                         style={{ width: `${((monthData.current.logistikIncome + monthData.current.logistikExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100}%` }}
                                     >
                                         <span className="text-[10px] font-black text-black px-1 truncate drop-shadow-md">
-                                            Logistik {(((monthData.current.logistikIncome + monthData.current.logistikExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
+                                            {isEn ? 'Logistics' : 'Logistik'} {(((monthData.current.logistikIncome + monthData.current.logistikExpense) / ((monthData.current.income + monthData.current.expense) || 1)) * 100).toFixed(0)}%
                                         </span>
                                     </div>
                                 </div>
                             </>
                         ) : (
                             <div className="w-full h-8 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Belum ada data</span>
+                                <span className="text-[10px] font-bold text-gray-400 tracking-widest uppercase">
+                                    {isEn ? 'No data available' : 'Belum ada data'}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -568,7 +595,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                     <div className="bg-green-100 border-3 border-black p-4 pop-shadow">
                         <div className="flex items-center gap-1.5 mb-2">
                             <TrendingUp size={16} strokeWidth={3} className="text-green-600" />
-                            <span className="font-black uppercase tracking-widest text-[11px] text-green-700">Pemasukan</span>
+                            <span className="font-black uppercase tracking-widest text-[11px] text-green-700">
+                                {isEn ? 'Income' : 'Pemasukan'}
+                            </span>
                         </div>
                         <span className="font-black text-xl tracking-tighter text-green-600 block mb-2 leading-none">
                             {formatRupiah(monthData.current.income)}
@@ -584,7 +613,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                     <div className="bg-red-100 border-3 border-black p-4 pop-shadow">
                         <div className="flex items-center gap-1.5 mb-2">
                             <TrendingDown size={16} strokeWidth={3} className="text-red-600" />
-                            <span className="font-black uppercase tracking-widest text-[11px] text-red-700">Pengeluaran</span>
+                            <span className="font-black uppercase tracking-widest text-[11px] text-red-700">
+                                {isEn ? 'Expense' : 'Pengeluaran'}
+                            </span>
                         </div>
                         <span className="font-black text-xl tracking-tighter text-red-600 block mb-2 leading-none">
                             {formatRupiah(monthData.current.expense)}
@@ -600,7 +631,9 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
 
                 <div className={`border-3 border-black p-4 pop-shadow ${monthData.current.balance >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
                     <div className="flex justify-between items-center">
-                        <span className="font-black uppercase tracking-widest text-xs text-gray-600">Saldo Filter Ini</span>
+                        <span className="font-black uppercase tracking-widest text-xs text-gray-600">
+                            {isEn ? 'Filtered Balance' : 'Saldo Filter Ini'}
+                        </span>
                         <span className={`font-black text-2xl tracking-tighter shrink-0 ${monthData.current.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {monthData.current.balance >= 0 ? '+' : ''}{formatRupiah(monthData.current.balance)}
                         </span>
@@ -612,16 +645,16 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                     <div className="flex items-center gap-2 mb-4 bg-blue-100 border-2 border-black p-2 pop-shadow-sm w-fit">
                         <RefreshCcw size={14} strokeWidth={3} className="text-blue-700" />
                         <span className="font-black uppercase tracking-widest text-[10px] text-blue-900">
-                            Performansi Komparatif
+                            {isEn ? 'Comparative Performance' : 'Performansi Komparatif'}
                         </span>
                     </div>
                     <table className="w-full text-xs min-w-[300px]">
                         <thead>
                             <tr className="border-b-2 border-black">
-                                <th className="text-left font-black uppercase tracking-widest py-2 text-[10px] w-1/4">Indikator</th>
+                                <th className="text-left font-black uppercase tracking-widest py-2 text-[10px] w-1/4">{isEn ? 'Indicator' : 'Indikator'}</th>
                                 <th className="text-right font-black uppercase tracking-widest py-2 text-[10px] text-gray-400 w-1/4">{monthData.prevMonthName}</th>
-                                <th className="text-right font-black uppercase tracking-widest py-2 text-[10px] w-1/4">{MONTH_NAMES[selectedMonth]}</th>
-                                <th className="text-right font-black uppercase tracking-widest py-2 text-[10px] w-1/4">Selisih</th>
+                                <th className="text-right font-black uppercase tracking-widest py-2 text-[10px] w-1/4">{monthNames[selectedMonth]}</th>
+                                <th className="text-right font-black uppercase tracking-widest py-2 text-[10px] w-1/4">{isEn ? 'Difference' : 'Selisih'}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -630,7 +663,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                     <div className="w-6 h-6 flex flex-shrink-0 items-center justify-center bg-green-100 border-2 border-black">
                                         <TrendingUp size={14} strokeWidth={3} className="text-green-700" />
                                     </div>
-                                    Masuk
+                                    {isEn ? 'Income' : 'Masuk'}
                                 </td>
                                 <td className="py-3 text-right font-bold text-gray-400">{formatRupiah(monthData.prev.income)}</td>
                                 <td className="py-3 text-right font-black text-green-600">{formatRupiah(monthData.current.income)}</td>
@@ -643,7 +676,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                     <div className="w-6 h-6 flex flex-shrink-0 items-center justify-center bg-red-100 border-2 border-black">
                                         <TrendingDown size={14} strokeWidth={3} className="text-red-700" />
                                     </div>
-                                    Keluar
+                                    {isEn ? 'Expense' : 'Keluar'}
                                 </td>
                                 <td className="py-3 text-right font-bold text-gray-400">{formatRupiah(monthData.prev.expense)}</td>
                                 <td className="py-3 text-right font-black text-red-600">{formatRupiah(monthData.current.expense)}</td>
@@ -656,7 +689,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                                     <div className="w-6 h-6 flex flex-shrink-0 items-center justify-center bg-yellow-300 border-2 border-black">
                                         <Wallet size={14} strokeWidth={3} className="text-black" />
                                     </div>
-                                    Saldo
+                                    {isEn ? 'Balance' : 'Saldo'}
                                 </td>
                                 <td className={`py-3 text-right font-bold ${monthData.prev.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>{formatRupiah(monthData.prev.balance)}</td>
                                 <td className={`py-3 text-right font-black ${monthData.current.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatRupiah(monthData.current.balance)}</td>
@@ -674,7 +707,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                         <div className="flex items-center gap-2 mb-3 bg-green-200 border-3 border-black p-2.5 pop-shadow-sm inline-flex">
                             <TrendingUp size={16} strokeWidth={3} className="text-green-800" />
                             <h3 className="font-black uppercase tracking-widest text-xs text-green-900">
-                                Detail Pemasukan
+                                {isEn ? 'Income Breakdown' : 'Detail Pemasukan'}
                             </h3>
                         </div>
                         {renderCategoryList(monthData.incomeBreakdown, 'income')}
@@ -686,7 +719,7 @@ const PengurusMonthlyComparison = ({ putraTransactions: propPutra, putriTransact
                         <div className="flex items-center gap-2 mb-3 bg-red-200 border-3 border-black p-2.5 pop-shadow-sm inline-flex">
                             <TrendingDown size={16} strokeWidth={3} className="text-red-800" />
                             <h3 className="font-black uppercase tracking-widest text-xs text-red-900">
-                                Detail Pengeluaran
+                                {isEn ? 'Expense Breakdown' : 'Detail Pengeluaran'}
                             </h3>
                         </div>
                         {renderCategoryList(monthData.expenseBreakdown, 'expense')}

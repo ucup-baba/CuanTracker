@@ -3,8 +3,11 @@ import { DollarSign, LogOut, Tag, Wallet, Home, Calculator as CalcIcon, BarChart
 import { Link } from 'react-router-dom';
 import { WALLETS } from '../constants';
 import ThemeToggle from './ThemeToggle';
+import { useLanguage, LanguageToggle } from '../i18n';
 
 const Header = ({ onLogout, userEmail, userPhoto, onOpenSettings, activeWallet, onWalletChange, onLogoClick, onOpenCalculator, onOpenCashMatch, onOpenComparison, onOpenDebt, isPengurus, theme, onOpenAccountManager, onOpenPengurusComparison, pendingCount = 0 }) => {
+    const [lang, setLang] = useLanguage('id');
+    const isEn = isPengurus && lang === 'en';
     const headerBg = theme?.headerBg || 'bg-yellow-400';
     // Emerald/rose headers need white text. For the light (yellow/amber) headers we
     // leave the color unset and inherit from the <nav>: black in light mode, and the
@@ -21,16 +24,17 @@ const Header = ({ onLogout, userEmail, userPhoto, onOpenSettings, activeWallet, 
                             {isPengurus ? <Shield size={32} /> : <DollarSign size={32} />}
                         </div>
                         <h1 className="text-2xl md:text-5xl font-black uppercase tracking-tighter app-brand-title">
-                            {isPengurus ? <>Dashboard<br />Pengurus.</> : <>Cuan<br />Tracker.</>}
+                            {isPengurus ? (isEn ? <>Supervisory<br />Dashboard.</> : <>Dashboard<br />Pengurus.</>) : <>Cuan<br />Tracker.</>}
                         </h1>
                     </Link>
 
-                    {/* Mobile: Theme Toggle + Profile Icon */}
+                    {/* Mobile: Theme Toggle + Language Toggle (Pengurus) + Profile Icon */}
                     <div className="md:hidden flex items-center gap-2">
+                        {isPengurus && <LanguageToggle lang={lang} setLang={setLang} />}
                         <ThemeToggle className="w-10 h-10 border-[3px]" size={20} />
                         <Link
-                            to="/setting"
-                            title="Profil & Setting"
+                            to={isPengurus ? '/akun' : '/setting'}
+                            title={isEn ? 'Profile & Settings' : 'Profil & Setting'}
                         >
                             {userPhoto ? (
                                 <img
@@ -94,14 +98,18 @@ const Header = ({ onLogout, userEmail, userPhoto, onOpenSettings, activeWallet, 
                             </>
                         )}
 
+                        {isPengurus && (
+                            <LanguageToggle lang={lang} setLang={setLang} />
+                        )}
+
                         {isPengurus && onOpenPengurusComparison && (
                             <button
                                 onClick={onOpenPengurusComparison}
                                 className="flex items-center gap-2 bg-white text-blue-700 font-black uppercase px-4 py-3 border-4 border-black pop-shadow-sm hover:bg-blue-100 transition-colors"
-                                title="Perbandingan"
+                                title={isEn ? 'Monthly Comparison' : 'Perbandingan'}
                             >
                                 <BarChart3 size={20} strokeWidth={2.5} />
-                                <span className="hidden lg:inline">Perbandingan</span>
+                                <span className="hidden lg:inline">{isEn ? 'Comparison' : 'Perbandingan'}</span>
                             </button>
                         )}
 
@@ -109,10 +117,10 @@ const Header = ({ onLogout, userEmail, userPhoto, onOpenSettings, activeWallet, 
                             <button
                                 onClick={onOpenAccountManager}
                                 className="relative flex items-center gap-2 bg-white text-emerald-700 font-black uppercase px-4 py-3 border-4 border-black pop-shadow-sm hover:bg-emerald-100 transition-colors"
-                                title="Kelola Akun"
+                                title={isEn ? 'Manage Accounts' : 'Kelola Akun'}
                             >
                                 <Users size={20} strokeWidth={2.5} />
-                                <span>Akun</span>
+                                <span>{isEn ? 'Accounts' : 'Akun'}</span>
                                 {pendingCount > 0 && (
                                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 border-2 border-black animate-bounce">
                                         {pendingCount}
@@ -126,10 +134,10 @@ const Header = ({ onLogout, userEmail, userPhoto, onOpenSettings, activeWallet, 
                         <button
                             onClick={onLogout}
                             className="flex items-center gap-2 bg-white text-black font-black uppercase px-6 py-3 border-4 border-black pop-shadow-sm hover:bg-red-500 hover:text-white transition-colors"
-                            title="Keluar"
+                            title={isEn ? 'Sign Out' : 'Keluar'}
                         >
                             <LogOut size={20} className="order-last" />
-                            <span>Keluar</span>
+                            <span>{isEn ? 'Sign Out' : 'Keluar'}</span>
                         </button>
                     </div>
                 </div>

@@ -33,8 +33,11 @@ import {
 } from './constants';
 import { auth, db, collection, addDoc, deleteDoc, doc, setDoc, updateDoc, onSnapshot, query, orderBy, getDoc, serverTimestamp, signOut } from './firebase';
 import { getInitialUiSkin, subscribeUiSkin } from './theme';
+import { useLanguage } from './i18n';
 
 export default function App() {
+    const [lang] = useLanguage('id');
+    const isEn = lang === 'en';
     const [user, setUser] = useState(null);
     const [selectedRole, setSelectedRole] = useState(null); // For multi-role users
     const [transactions, setTransactions] = useState([]);
@@ -718,7 +721,11 @@ export default function App() {
                     pendingCount={isAdmin ? pendingCount : 0}
                 />
 
-                <Marquee text={theme.marqueeText} bg={theme.marqueeBg} textCol="text-white" />
+                <Marquee
+                    text={isEn ? 'SUPERVISORY DASHBOARD — BAITUL QOWWAM FOUNDATION' : theme.marqueeText}
+                    bg={theme.marqueeBg}
+                    textCol="text-white"
+                />
 
                 <Routes>
                     <Route path="/laporan" element={
@@ -766,9 +773,13 @@ export default function App() {
                                 </div>
                                 <div>
                                     <h4 className="font-black uppercase tracking-tight text-sm text-emerald-700">
-                                        {isAdmin ? 'Admin Pengurus' : 'Pengurus'}
+                                        {isAdmin
+                                            ? (isEn ? 'Supervisory Admin' : 'Admin Pengurus')
+                                            : (isEn ? 'Board / Supervisor' : 'Pengurus')}
                                     </h4>
-                                    <p className="text-xs text-emerald-600 font-bold">Akses dashboard keuangan asrama</p>
+                                    <p className="text-xs text-emerald-600 font-bold">
+                                        {isEn ? 'Dormitory financial supervisory access' : 'Akses dashboard keuangan asrama'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -782,8 +793,12 @@ export default function App() {
                                         <Users size={22} strokeWidth={2.5} className="text-black" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-black uppercase tracking-tight text-sm">Kelola Akun</h4>
-                                        <p className="text-xs text-gray-400 font-bold truncate">Setujui atau blokir akun pengurus</p>
+                                        <h4 className="font-black uppercase tracking-tight text-sm">
+                                            {isEn ? 'Manage Accounts' : 'Kelola Akun'}
+                                        </h4>
+                                        <p className="text-xs text-gray-400 font-bold truncate">
+                                            {isEn ? 'Approve or block supervisor accounts' : 'Setujui atau blokir akun pengurus'}
+                                        </p>
                                     </div>
                                     <ChevronRight size={20} strokeWidth={2.5} className="text-gray-300 shrink-0 group-hover:translate-x-1 transition-transform" />
                                     {pendingCount > 0 && (
@@ -802,7 +817,9 @@ export default function App() {
                                 <div className="bg-red-400 p-2.5 border-3 border-black group-hover:bg-white transition-colors">
                                     <LogOut size={20} strokeWidth={2.5} className="text-white group-hover:text-red-500 transition-colors" />
                                 </div>
-                                <span className="font-black uppercase tracking-widest text-sm">Keluar</span>
+                                <span className="font-black uppercase tracking-widest text-sm">
+                                    {isEn ? 'Sign Out' : 'Keluar'}
+                                </span>
                             </button>
                         </main>
                     } />

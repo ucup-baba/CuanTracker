@@ -4,6 +4,7 @@ import { auth, googleProvider } from '../firebase';
 import { DollarSign, Shield, BookOpen } from 'lucide-react';
 import { getAllAllowedEmails, getRoleFromEmail, ROLE_CONFIG } from '../constants';
 import { SystemOverviewDialog } from './SystemOverview';
+import { useLanguage, LanguageToggle } from '../i18n';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -11,6 +12,8 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showOverview, setShowOverview] = useState(false);
+    const [lang, setLang] = useLanguage('id');
+    const isEn = lang === 'en';
 
     const allowedPasswordEmail = "superbq@bqmail.com";
 
@@ -48,7 +51,11 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-pink-100 font-sans selection:bg-black selection:text-yellow-400 flex items-center justify-center p-6 bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:20px_20px]">
-            <div className="max-w-md w-full bg-white border-4 border-black p-8 pop-shadow-sm flex flex-col items-center">
+            <div className="max-w-md w-full bg-white border-4 border-black p-8 pop-shadow-sm flex flex-col items-center relative">
+                {/* Language Switcher */}
+                <div className="w-full flex justify-end mb-2">
+                    <LanguageToggle lang={lang} setLang={setLang} />
+                </div>
 
                 {/* Logo */}
                 <div className="bg-yellow-400 p-4 border-4 border-black rotate-[-6deg] mb-8 pop-shadow-sm">
@@ -56,7 +63,9 @@ const Login = () => {
                 </div>
 
                 <h1 className="text-4xl font-black uppercase tracking-tighter text-center mb-2">Cuan<br />Tracker<span className="text-yellow-400">.</span></h1>
-                <p className="font-bold text-gray-500 uppercase tracking-widest text-sm mb-8 text-center border-b-4 border-black pb-4 w-full">Pencatatan Keuangan Asrama</p>
+                <p className="font-bold text-gray-500 uppercase tracking-widest text-sm mb-8 text-center border-b-4 border-black pb-4 w-full">
+                    {isEn ? 'Dormitory Financial Tracking' : 'Pencatatan Keuangan Asrama'}
+                </p>
 
                 {error && (
                     <div className="w-full bg-red-500 text-white font-bold p-4 border-4 border-black mb-6 text-sm">
@@ -93,13 +102,13 @@ const Login = () => {
                         disabled={loading}
                         className="w-full bg-black text-white font-black uppercase tracking-widest text-lg py-4 border-4 border-black hover:bg-yellow-400 hover:text-black transition-colors pop-shadow mt-2 disabled:opacity-50"
                     >
-                        {loading ? 'MEMPROSES...' : 'MASUK 🚀'}
+                        {loading ? (isEn ? 'PROCESSING...' : 'MEMPROSES...') : (isEn ? 'SIGN IN 🚀' : 'MASUK 🚀')}
                     </button>
                 </form>
 
                 <div className="w-full flex items-center gap-4 mb-8">
                     <div className="h-1 bg-black flex-1"></div>
-                    <span className="font-black uppercase text-xl">ATAU</span>
+                    <span className="font-black uppercase text-xl">{isEn ? 'OR' : 'ATAU'}</span>
                     <div className="h-1 bg-black flex-1"></div>
                 </div>
 
@@ -115,13 +124,15 @@ const Login = () => {
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    LOGIN VIA GOOGLE
+                    {isEn ? 'SIGN IN WITH GOOGLE' : 'LOGIN VIA GOOGLE'}
                 </button>
 
                 {/* Divider for Pengurus */}
                 <div className="w-full flex items-center gap-4 mb-4 mt-4">
                     <div className="h-0.5 bg-emerald-300 flex-1"></div>
-                    <span className="font-black uppercase text-xs text-emerald-600 tracking-widest">PENGURUS</span>
+                    <span className="font-black uppercase text-xs text-emerald-600 tracking-widest">
+                        {isEn ? 'BOARD / SUPERVISOR' : 'PENGURUS'}
+                    </span>
                     <div className="h-0.5 bg-emerald-300 flex-1"></div>
                 </div>
 
@@ -132,11 +143,12 @@ const Login = () => {
                     className="w-full bg-emerald-500 text-white font-black uppercase tracking-widest text-base py-4 border-4 border-black hover:bg-emerald-600 flex items-center justify-center gap-3 transition-transform hover:-translate-y-1 pop-shadow"
                 >
                     <Shield size={22} strokeWidth={3} />
-                    LOGIN PENGURUS
+                    {isEn ? 'SUPERVISOR LOGIN (PENGURUS)' : 'LOGIN PENGURUS'}
                 </button>
                 <p className="text-xs text-slate-500 mt-3 text-center font-bold">
-                    Login dengan Gmail untuk akses Dashboard Pengurus (Perlu persetujuan admin).<br />
-                    <span className="text-slate-400">Sign in with Google for Supervisory Access (Pending Admin Approval).</span>
+                    {isEn
+                        ? 'Sign in with Google for Supervisory Dashboard access (Requires Admin Approval).'
+                        : 'Login dengan Gmail untuk akses Dashboard Pengurus (Perlu persetujuan admin).'}
                 </p>
 
                 {/* Tombol System Overview & AI Report (EN / ID) */}
@@ -146,7 +158,11 @@ const Login = () => {
                     className="w-full mt-5 bg-amber-300 text-black font-black uppercase tracking-wider text-xs sm:text-sm py-3 px-4 border-4 border-black hover:bg-amber-400 flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 pop-shadow-sm"
                 >
                     <BookOpen size={18} strokeWidth={2.5} />
-                    <span>System Overview & AI Report (🇬🇧 EN / 🇮🇩 ID)</span>
+                    <span>
+                        {isEn
+                            ? 'System Overview & AI Report (🇬🇧 EN / 🇮🇩 ID)'
+                            : 'Info Sistem & Laporan AI (🇬🇧 EN / 🇮🇩 ID)'}
+                    </span>
                 </button>
             </div>
 

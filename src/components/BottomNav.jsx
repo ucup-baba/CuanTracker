@@ -1,10 +1,13 @@
 import React from 'react';
 import { Home, Tag, Settings as SettingsIcon, Shield, BarChart3, User, Sparkles } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLanguage } from '../i18n';
 
 const BottomNav = ({ isPengurus, theme, onQuickInput, onOpenComparison }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [lang] = useLanguage('id');
+    const isEn = isPengurus && lang === 'en';
 
     const accentBg = theme?.accentPrimary || 'bg-yellow-400';
 
@@ -21,9 +24,9 @@ const BottomNav = ({ isPengurus, theme, onQuickInput, onOpenComparison }) => {
     // === PENGURUS NAV ===
     if (isPengurus) {
         const items = [
-            { id: 'home', label: 'Beranda', icon: Shield, path: '/', color: 'bg-emerald-400' },
-            { id: 'laporan', label: 'Laporan', icon: BarChart3, path: '/laporan', color: 'bg-indigo-400' },
-            { id: 'akun', label: 'Akun', icon: User, path: '/akun', color: 'bg-slate-400' },
+            { id: 'home', label: isEn ? 'Home' : 'Beranda', icon: Shield, path: '/', color: 'bg-emerald-400' },
+            { id: 'laporan', label: isEn ? 'Reports' : 'Laporan', icon: BarChart3, path: '/laporan', color: 'bg-indigo-400' },
+            { id: 'akun', label: isEn ? 'Account' : 'Akun', icon: User, path: '/akun', color: 'bg-slate-400' },
         ];
 
         return (
