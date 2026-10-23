@@ -13,22 +13,22 @@ const CONTENT = {
         sections: {
             overview: {
                 title: "1. What is Inside This System?",
-                desc: "CuanTracker is a dedicated web application built with AI assistance to record, categorize, and supervise routine day-to-day operational cash flows at Baitul Qowwam Foundation. When accessed by board members or evaluators, the platform provides the Supervisory Dashboard (Dashboard Pengurus) covering three active operational branches:",
+                desc: "CuanTracker is a dedicated web application built with AI assistance to record, categorize, and supervise routine day-to-day operational cash flows at Baitul Qowwam Foundation. When accessed by board members or evaluators, the platform provides the Supervisory Dashboard (Dashboard Pengurus) structured across three operational branches:",
                 branches: [
                     {
-                        name: "Boys' Dormitory (Asrama Putra)",
+                        name: "Boys' Dormitory (Asrama Putra) — Active",
                         color: "bg-indigo-500 text-white",
-                        items: "Daily kitchen & meal supplies, drinking water/gas refills, dormitory utilities (electricity, water, Wi-Fi), hygiene supplies, and urgent facility maintenance."
+                        items: "Actively managed by younger alumni / dedication staff (pengabdian putra). Tracks daily kitchen & meal supplies, water/gas refills, utilities (electricity, water, Wi-Fi), hygiene supplies, and urgent maintenance."
                     },
                     {
-                        name: "Girls' Dormitory (Asrama Putri)",
+                        name: "Girls' Dormitory (Asrama Putri) — Active",
                         color: "bg-rose-500 text-white",
-                        items: "Daily groceries & cooking needs, dormitory sanitation, utilities, room upkeep, and daily student welfare needs."
+                        items: "Actively managed by female alumni / dedication staff (pengabdian putri). Tracks daily groceries & cooking needs, dormitory sanitation, utilities, room upkeep, and daily student welfare."
                     },
                     {
-                        name: "Logistics & Procurement (Logistik)",
-                        color: "bg-amber-500 text-white",
-                        items: "Delivery & courier costs, office/school stationery (ATK), printing & documentation, operational equipment, and meeting consumables."
+                        name: "Logistics (Logistik) — Ready, Not Yet Used",
+                        color: "bg-amber-500 text-black",
+                        items: "Module & categories are fully prepared in the app, but records are currently empty (Rp 0) because Logistics is overseen by a senior/older board member who still finds digital recording challenging and uses manual bookkeeping for now."
                     }
                 ]
             },
@@ -37,31 +37,31 @@ const CONTENT = {
                 points: [
                     {
                         head: "AI-Powered Fast Input (Smart Transaction Parsing)",
-                        body: "Dormitory caretakers can simply type or dictate everyday notes (e.g., \"Bought 5kg rice, cooking gas, and floor soap Rp 120,000\") and the integrated Gemini AI automatically extracts the amount, determines whether it is income or expense, and assigns the appropriate category and sub-category—even supporting multiple items in a single prompt."
+                        body: "Dormitory caretakers (alumni/pengabdian) can simply type or dictate everyday notes (e.g., \"Bought 5kg rice, cooking gas, and floor soap Rp 120,000\") and the integrated Gemini AI automatically extracts the amount, determines whether it is income or expense, and assigns the appropriate category and sub-category—even supporting multiple items in a single prompt."
                     },
                     {
                         head: "Real-Time Supervisory Consolidation",
-                        body: "Transactions from all three operational branches are synchronized in real time into the Supervisory Dashboard and Monthly Comparison module (/laporan), enabling transparent budget monitoring without manual spreadsheet compilation."
+                        body: "Transactions from active operational branches are synchronized in real time into the Supervisory Dashboard and Monthly Comparison module (/laporan), enabling transparent budget monitoring without manual spreadsheet compilation."
                     }
                 ]
             },
             limitations: {
                 title: "3. Current Scope & Practical Limitations",
-                subtitle: "Why this system only covers daily operations for now:",
-                includedTitle: "Currently Included (Active Scope)",
+                subtitle: "Why this system only covers daily dormitory operations for now:",
+                includedTitle: "Currently Active in App (Managed by Alumni / Pengabdian)",
                 includedItems: [
-                    "Daily operational expenses for Boys' & Girls' Dormitories",
-                    "Routine logistics, stationery, and maintenance supplies",
+                    "Daily operational expenses & income for Boys' & Girls' Dormitories",
+                    "Daily kitchen groceries, utilities, sanitation, and minor repairs",
                     "Operational cash matching (Cash Opname) & monthly comparison reports"
                 ],
-                excludedTitle: "Not Yet Included (Managed Manually)",
+                excludedTitle: "Not Yet Active / Managed Manually (Handled by Senior Staff)",
                 excludedItems: [
+                    "Logistics division records (module ready, but currently empty / manual)",
                     "Teacher & staff monthly payroll / salaries (Gaji Guru & Staf)",
-                    "Formal school tuition fees (SPP Sekolah)",
-                    "Major infrastructure & building construction projects (Pembangunan)"
+                    "Formal school tuition fees (SPP Sekolah) & building construction (Pembangunan)"
                 ],
-                reasonTitle: "Human & Organizational Context:",
-                reasonBody: "Several senior board members and older administrators find full-scale digital accounting interfaces challenging to operate and remain more comfortable with conventional, paper-based ledgers. To respect organizational workflow and avoid operational friction, a pragmatic hybrid approach is implemented: large institutional finances remain managed manually by senior administrators, while fast-moving daily dormitory operations are digitized using this AI-assisted platform."
+                reasonTitle: "Human & Generational Context:",
+                reasonBody: "Daily operations for the Boys' and Girls' Dormitories are managed by younger alumni and dedication staff (pengabdian), making digital and AI-assisted adoption smooth and immediate. Conversely, the Logistics division as well as macro institutional finances (teacher salaries, tuition fees, and construction) are managed by senior board members (older administrators) who find digital interfaces difficult to operate and remain more comfortable with conventional manual ledgers. Therefore, a pragmatic phased approach is used."
             },
             access: {
                 title: "4. Reviewer & Board Member Login Guide",
@@ -80,22 +80,22 @@ const CONTENT = {
         sections: {
             overview: {
                 title: "1. Apa Saja Isi di Dalam Sistem Ini?",
-                desc: "CuanTracker adalah aplikasi web yang dikembangkan dengan bantuan AI untuk mencatat, mengelompokkan, dan mengawasi arus kas operasional harian di Yayasan Baitul Qowwam. Bagi pengurus atau tim evaluator, sistem ini menampilkan Dashboard Pengurus yang memantau tiga pos operasional utama secara real-time:",
+                desc: "CuanTracker adalah aplikasi web yang dikembangkan dengan bantuan AI untuk mencatat, mengelompokkan, dan mengawasi arus kas operasional harian di Yayasan Baitul Qowwam. Bagi pengurus atau tim evaluator, sistem ini menampilkan Dashboard Pengurus yang terbagi ke dalam tiga pos operasional:",
                 branches: [
                     {
-                        name: "Asrama Putra",
+                        name: "Asrama Putra (Aktif Digunakan)",
                         color: "bg-indigo-500 text-white",
-                        items: "Belanja dapur & makan harian, isi ulang galon/gas, tagihan utilitas asrama (listrik, air, Wi-Fi), kebersihan, serta perawatan fasilitas mendadak."
+                        items: "Dikelola harian oleh alumni / pengabdian putra. Mencatat belanja dapur & makan harian, isi ulang galon/gas, tagihan utilitas (listrik, air, Wi-Fi), kebersihan, serta perawatan fasilitas."
                     },
                     {
-                        name: "Asrama Putri",
+                        name: "Asrama Putri (Aktif Digunakan)",
                         color: "bg-rose-500 text-white",
-                        items: "Kebutuhan dapur & bahan makanan harian, kebersihan asrama, tagihan rutin, pemeliharaan kamar, dan keperluan harian santri putri."
+                        items: "Dikelola harian oleh alumni / pengabdian putri. Mencatat kebutuhan dapur & bahan makanan harian, kebersihan asrama, tagihan rutin, pemeliharaan kamar, dan keperluan santri putri."
                     },
                     {
-                        name: "Divisi Logistik",
-                        color: "bg-amber-500 text-white",
-                        items: "Biaya pengiriman & ekspedisi, bahan habis pakai (ATK, kertas, tinta), cetak & dokumentasi, peralatan kerja, serta konsumsi rapat/kegiatan."
+                        name: "Divisi Logistik (Fitur Siap, Data Masih Kosong)",
+                        color: "bg-amber-500 text-black",
+                        items: "Fitur & kategori sudah disiapkan di sistem, namun datanya saat ini masih kosong (Rp 0) karena bagian Logistik dipegang oleh pengurus senior (yang sudah agak sepuh) sehingga masih kesulitan menggunakan aplikasi dan sementara masih dicatat manual."
                     }
                 ]
             },
@@ -104,31 +104,31 @@ const CONTENT = {
                 points: [
                     {
                         head: "Input Cepat AI (Pencatatan Transaksi Pintar)",
-                        body: "Penanggung jawab operasional cukup mengetik atau mendiktekan catatan belanja sehari-hari (contoh: \"Beli beras 5kg, gas elpiji, dan sabun pel 120rb\"), lalu AI Gemini secara otomatis mengenali nominal, jenis transaksi, serta memilih kategori dan sub-kategori yang tepat (termasuk multi-transaksi sekaligus)."
+                        body: "Penanggung jawab operasional (alumni/pengabdian) cukup mengetik atau mendiktekan catatan belanja sehari-hari (contoh: \"Beli beras 5kg, gas elpiji, dan sabun pel 120rb\"), lalu AI Gemini secara otomatis mengenali nominal, jenis transaksi, serta memilih kategori dan sub-kategori yang tepat (termasuk multi-transaksi sekaligus)."
                     },
                     {
                         head: "Rekapitulasi & Pengawasan Pengurus Real-Time",
-                        body: "Seluruh pencatatan dari Putra, Putri, dan Logistik langsung terhubung ke Dashboard Pengurus dan halaman Laporan Perbandingan Bulanan (/laporan), sehingga pengurus dapat memantau sisa saldo dan tren pengeluaran kapan saja."
+                        body: "Seluruh pencatatan operasional langsung terhubung ke Dashboard Pengurus dan halaman Laporan Perbandingan Bulanan (/laporan), sehingga pengurus dapat memantau sisa saldo dan tren pengeluaran kapan saja."
                     }
                 ]
             },
             limitations: {
                 title: "3. Ruang Lingkup & Keterbatasan Saat Ini",
-                subtitle: "Mengapa sistem ini baru digunakan untuk operasional harian:",
-                includedTitle: "Sudah Tercakup di Aplikasi (Operasional Harian)",
+                subtitle: "Mengapa sistem ini baru aktif di operasional harian Putra & Putri:",
+                includedTitle: "Sudah Aktif Digunakan (Dipegang Alumni / Pengabdian)",
                 includedItems: [
                     "Pengeluaran & pemasukan operasional harian Asrama Putra & Putri",
-                    "Kebutuhan logistik rutin, ATK, dan perawatan fasilitas harian",
+                    "Belanja dapur harian, utilitas asrama, kebersihan, dan perbaikan ringan",
                     "Pencocokan kas fisik (Cash Match) & laporan perbandingan bulanan"
                 ],
-                excludedTitle: "Belum Tercakup (Masih Dikelola Manual)",
+                excludedTitle: "Belum Aktif / Masih Manual (Dipegang Pengurus Senior)",
                 excludedItems: [
+                    "Transaksi Divisi Logistik (fitur sudah ada di web, namun masih kosong/manual)",
                     "Gaji guru dan staf yayasan (Payroll)",
-                    "Pembayaran SPP sekolah formal",
-                    "Anggaran pembangunan fisik & proyek infrastruktur besar"
+                    "Pembayaran SPP sekolah formal & anggaran pembangunan fisik"
                 ],
-                reasonTitle: "Alasan & Konteks Lapangan:",
-                reasonBody: "Beberapa pengurus yayasan yang berusia lebih sepuh (senior) masih mengalami kesulitan jika harus beralih sepenuhnya ke sistem pembukuan digital dan lebih nyaman menggunakan pencatatan manual/konvensional. Oleh karena itu, diterapkan pendekatan bertahap (hybrid): keuangan makro seperti gaji guru, SPP, dan pembangunan tetap dikelola secara manual oleh pengurus senior, sedangkan operasional harian asrama yang transaksinya sangat sering sudah didigitalisasi dengan bantuan AI."
+                reasonTitle: "Alasan & Konteks Sumber Daya Manusia:",
+                reasonBody: "Operasional harian Asrama Putra dan Putri dipegang oleh para alumni / pengabdian muda, sehingga penggunaan aplikasi dan fitur AI berjalan sangat lancar. Sebaliknya, bagian Logistik serta keuangan makro yayasan (seperti gaji guru, SPP sekolah, dan pembangunan) masih diurusi oleh pengurus senior (yang berusia lebih sepuh) yang agak kesulitan jika harus mengoperasikan aplikasi digital, sehingga untuk sementara masih menggunakan pembukuan manual."
             },
             access: {
                 title: "4. Panduan Login Pengurus & Evaluator",
